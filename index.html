@@ -1,0 +1,1280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Oakland Election Night</title>
+<meta name="description" content="Live Alameda County results for Oakland: OUSD Districts 2, 4 and 6, Measure EE and other races.">
+<style>
+:root {
+  color-scheme: light dark;
+  --color-bg: #f7f6f2; --color-panel: #ffffff; --color-fg: #1f1e1b; --color-fg-muted: #66645e; --color-border-line: #dedcd4; --color-bad: #b3261e;
+  --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px;
+  --cds-radius: 8px; --cds-border: #dedcd4;
+  --cds-font-size-caption: 13px; --cds-font-size-body: 15px; --cds-font-size-heading: 19px; --cds-font-size-title: 26px; --cds-font-weight-medium: 600;
+  --cds-chart-grid: #e6e4dc; --cds-chart-axis: #66645e; --cds-chart-reference: #1f1e1b; --cds-chart-muted: #a8a69e;
+  --cds-surface-popover: #ffffff; --cds-shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --font-anthropic-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-anthropic-serif: Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --color-bg: #1b1a18; --color-panel: #262522; --color-fg: #f1efe8; --color-fg-muted: #aeaca4; --color-border-line: #3d3b37; --color-bad: #f2867e;
+  --cds-border: #3d3b37; --cds-chart-grid: #3a3835; --cds-chart-axis: #aeaca4; --cds-chart-reference: #f1efe8; --cds-chart-muted: #77756e;
+  --cds-surface-popover: #33312e; --cds-shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.5);
+} }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); line-height: 1.4; overflow-x: hidden; }
+#dash-root { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+#site-stale { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--color-bad); border-radius: var(--cds-radius); color: var(--color-bad); font-size: var(--cds-font-size-caption); }
+#site-foot { margin-top: 32px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+</style>
+<script src="d3.min.js"></script>
+<script src="runtime.js"></script>
+</head>
+<body>
+<div id="dash-root">
+<p id="site-stale" hidden></p>
+<style>
+:root {
+  --oe-challenger: #1f8a4c; --oe-incumbent: #c8372d;
+  --oe-c1: #cfeeda; --oe-c2: #7fcf9b; --oe-c3: #0f6b38; --oe-n: #e4e4e0; --oe-i1: #f8d5d0; --oe-i2: #ec8b80; --oe-i3: #a81f18;
+  --oe-s1: #e6eefb; --oe-s2: #c5d8f5; --oe-s3: #9dbeee; --oe-s4: #6f9fe3; --oe-s5: #437dd0; --oe-s6: #2559a8; --oe-s7: #123a78;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --oe-challenger: #4cc27a; --oe-incumbent: #f0675c;
+  --oe-c1: #1f4f33; --oe-c2: #2f8a55; --oe-c3: #6fe09c; --oe-n: #4a4a48; --oe-i1: #5e2320; --oe-i2: #b4433a; --oe-i3: #ff8d80;
+  --oe-s1: #1c2a40; --oe-s2: #223d63; --oe-s3: #2a558c; --oe-s4: #3472b8; --oe-s5: #5093da; --oe-s6: #86b8ee; --oe-s7: #c4defb;
+} }
+:root[data-theme="dark"] {
+  --oe-challenger: #4cc27a; --oe-incumbent: #f0675c;
+  --oe-c1: #1f4f33; --oe-c2: #2f8a55; --oe-c3: #6fe09c; --oe-n: #4a4a48; --oe-i1: #5e2320; --oe-i2: #b4433a; --oe-i3: #ff8d80;
+  --oe-s1: #1c2a40; --oe-s2: #223d63; --oe-s3: #2a558c; --oe-s4: #3472b8; --oe-s5: #5093da; --oe-s6: #86b8ee; --oe-s7: #c4defb;
+}
+#dash-root .oe { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); font-variant-numeric: tabular-nums; }
+.oe h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+.oe h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.oe h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.oe p { margin: 0; }
+.oe-sub, .oe-note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); line-height: 1.45; max-width: 75ch; }
+.oe-head, .oe-sec { display: grid; gap: var(--cds-gap-sm); }
+.oe-sec { gap: var(--cds-gap-md); }
+.oe-fresh { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--cds-gap-md); padding-block: var(--cds-pad-md); border-block: 1px solid var(--color-border-line); }
+.oe-fresh div { display: grid; gap: 2px; min-width: 0; }
+.oe-label { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.oe-fresh b { font-weight: var(--cds-font-weight-medium); }
+.oe-problem { color: var(--color-bad); font-size: var(--cds-font-size-caption); }
+.oe-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-md); align-content: start; min-width: 0; }
+.oe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-md); }
+.oe-big { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xl); }
+.oe-big div { display: grid; gap: 2px; }
+.oe-big b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.6); line-height: 1.05; }
+.oe-bar { position: relative; display: flex; height: 18px; border-radius: var(--cds-radius); overflow: hidden; background: var(--cds-chart-grid); }
+.oe-bar i { display: block; height: 100%; }
+.oe-mid { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--color-fg); }
+.oe-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px var(--cds-gap-sm); align-items: baseline; }
+.oe-row .oe-bar { grid-column: 1 / -1; height: 8px; }
+.oe-rows { display: grid; gap: var(--cds-gap-sm); }
+.oe-meta { display: flex; flex-wrap: wrap; gap: 2px var(--cds-gap-md); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.oe-scroll { overflow-x: auto; }
+.oe table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); }
+.oe th, .oe td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.oe th { color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+.oe th:first-child, .oe td:first-child { text-align: left; position: sticky; left: 0; background: var(--color-panel); }
+.oe a { color: inherit; }
+.oe-win { font-weight: var(--cds-font-weight-medium); }
+.oe-moves { display: grid; gap: var(--cds-gap-lg); }
+.oe-move-chart { position: relative; min-height: 410px; }
+.oe-move-chart text { font-size: 13px; fill: var(--color-fg-muted); }
+.oe-move-chart text.oe-ink { fill: var(--color-fg); }
+.oe-move-chart text.oe-strong { fill: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.oe-move-chart text.oe-halo { paint-order: stroke; stroke: var(--color-panel); stroke-width: 4px; stroke-linejoin: round; }
+.oe-move-body { display: flex; flex-wrap: wrap; gap: var(--cds-gap-lg); align-items: flex-start; }
+.oe-move-main { flex: 3 1 34rem; min-width: 0; }
+.oe-move-side { flex: 1 1 17rem; min-width: 0; display: grid; gap: var(--cds-gap-sm); padding: var(--cds-pad-md); border-left: 1px solid var(--color-border-line); }
+.oe-side-row { display: grid; gap: 4px; font-size: var(--cds-font-size-caption); }
+.oe-side-stack { display: flex; gap: 2px; height: 34px; position: relative; }
+.oe-side-stack i { display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; color: var(--color-fg); font-style: normal; font-weight: var(--cds-font-weight-medium); }
+.oe-side-table td, .oe-side-table th { white-space: normal; }
+.oe-keys { display: flex; flex-wrap: wrap; gap: 4px var(--cds-gap-lg); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.oe-keys span { display: inline-flex; align-items: center; gap: 5px; }
+.oe-keys i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.oe-keys b { display: inline-block; width: 18px; height: 0; border-top: 2.5px solid; }
+.oe-turnout { display: grid; gap: var(--cds-gap-sm); padding: var(--cds-pad-md); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.oe-turnout-top { display: flex; flex-wrap: wrap; gap: 4px var(--cds-gap-md); align-items: baseline; justify-content: space-between; }
+.oe-turnout label { font-weight: var(--cds-font-weight-medium); }
+.oe-turnout output { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); }
+.oe-turnout input[type=range] { width: 100%; margin: 0; }
+.oe-turnout input[type=range]:focus-visible, .oe-presets button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.oe-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.oe-presets button { font: inherit; font-size: var(--cds-font-size-caption); padding: 5px 10px; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); cursor: pointer; }
+.oe-presets button[aria-pressed=true] { border-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.oe-file-grid { display: flex; flex-wrap: wrap; gap: var(--cds-gap-lg); align-items: flex-start; }
+.oe-file-main { flex: 3 1 32rem; min-width: 0; }
+.oe-file-side { flex: 1 1 18rem; min-width: 0; display: grid; gap: var(--cds-gap-sm); }
+.oe-scan-chart { position: relative; min-height: 310px; }
+.oe-scan-chart text { font-size: 13px; fill: var(--color-fg-muted); }
+.oe-scan-chart text.oe-ink { fill: var(--color-fg); }
+.oe-scan-chart text.oe-strong { fill: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.oe-scan-chart text.oe-halo { paint-order: stroke; stroke: var(--color-panel); stroke-width: 4px; stroke-linejoin: round; }
+.oe-file-side td, .oe-file-side th { white-space: normal; }
+.oe-map-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-sm); }
+.oe-map-toggle { font-size: var(--cds-font-size-caption); display: inline-flex; align-items: center; gap: 6px; }
+.oe-map { position: relative; min-height: 420px; }
+.oe-map text { font-size: 12px; fill: var(--color-fg); paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; stroke-linejoin: round; }
+.oe-map-key { display: grid; gap: 4px; width: 100%; max-width: 42rem; }
+.oe-map-key-ends { display: flex; justify-content: space-between; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
+.oe-map-bins { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.oe-map-bins div { display: grid; gap: 2px; min-width: 0; text-align: center; }
+.oe-map-bins i { display: block; width: 100%; height: 14px; border-radius: 2px; }
+.oe-map-bins span { color: var(--color-fg-muted); font-size: 11px; }
+.oe-map text.oe-map-count { font-size: 11px; font-weight: 600; }
+.oe-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--cds-gap-md); border-top: 1px solid var(--color-border-line); padding-top: var(--cds-pad-md); }
+.oe-stats div { display: grid; gap: 2px; min-width: 0; }
+.oe-stats b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); }
+.oe-tip { position: absolute; z-index: 2; max-width: 220px; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); }
+.oe-chart { min-height: 170px; position: relative; }
+</style>
+<div class="oe">
+  <header class="oe-head" id="top">
+    <h1>Oakland Election Night</h1>
+    <p data-draw="takeaway" data-source="live">—</p>
+    <p class="oe-sub">November 3, 2026 general election. All counts are unofficial until certified, and the first numbers are mail ballots only, so early leads can shift.</p>
+  </header>
+
+  <section class="oe-fresh" id="freshness" aria-label="How current this page is">
+    <div><span class="oe-label">County last posted results</span><b data-draw="county-time" data-source="live">—</b><span class="oe-label" data-draw="county-report" data-source="live">—</span></div>
+    <div><span class="oe-label">Last update sent to this page</span><b data-draw="checked-time" data-source="live">—</b><span class="oe-label">The county is checked every 30 seconds. This time only moves when a change is sent, or at a regular check-in: every 15 minutes until 7:55 PM, then every 5.</span></div>
+    <div><span class="oe-label">We first saw these results</span><b data-draw="results-seen" data-source="live">—</b><span class="oe-label">Time this page's results changed</span></div>
+    <div><span class="oe-label">Ballot returns last changed</span><b data-draw="returns-seen" data-source="live">—</b><span class="oe-label">The county gives no time for these, so this is when we saw it</span></div>
+    <p class="oe-problem" data-draw="problem" data-source="live">—</p>
+  </section>
+
+  <section class="oe-sec" id="ousd">
+    <h2>OUSD school board</h2>
+    <p class="oe-sub">Votes shown are first choices. Ranked-choice rounds appear when the county posts them, which it says happens at the end of election night. With three candidates, the real win number can come in lower, because ballots can drop out between rounds.</p>
+    <div class="oe-grid" data-draw="ousd" data-source="live byrace">—</div>
+    <h2 id="ousd-moves">How each OUSD race has moved</h2>
+    <p class="oe-sub">Bars show how each post's new votes split. Lines show each candidate's running share of all votes counted. Districts 4 and 6 show the final ranked-choice round: the last point is the county's count, and dashed lines and hollow points are estimates made by applying that round's vote transfers to earlier posts. Win numbers start from past turnout and aren't county figures. You can change each race's expected turnout below, and the numbers for that race will update. Changes apply only to your view.</p>
+    <div class="oe-moves" data-draw="ousd-moves" data-source="live byrace">—</div>
+    <h2 id="precinct-map">Results and remaining votes by area</h2>
+    <p class="oe-sub">Who's ahead in each area so far, how many votes it likely still has to count, and what that could mean for each candidate. Votes left are estimated from each area's past turnout and the race's turnout setting above, so they're estimates, not county counts.</p>
+    <article class="oe-card" id="precinct-map-card">
+      <div class="oe-map-controls">
+        <div class="oe-presets" role="group" aria-label="Choose a district">
+          <button type="button" data-map-race="D2">District 2</button>
+          <button type="button" data-map-race="D4">District 4</button>
+          <button type="button" data-map-race="D6">District 6</button>
+        </div>
+        <div class="oe-presets" role="group" aria-label="Choose what the map colors">
+          <button type="button" data-map-metric="lead">Results so far</button>
+          <button type="button" data-map-metric="net">Expected gain</button>
+          <button type="button" data-map-metric="left">Votes left</button>
+        </div>
+        <label class="oe-map-toggle"><input type="checkbox" id="map-hoods" checked> Neighborhood names</label>
+      </div>
+      <h3 data-draw="map-title" data-source="precmap live byrace cvr">—</h3>
+      <div class="oe-stats" data-draw="map-stats" data-source="precmap live byrace cvr">—</div>
+      <h3 data-draw="map-path-title" data-source="precmap live byrace cvr">—</h3>
+      <div class="oe-stats" data-draw="map-path" data-source="precmap live byrace cvr">—</div>
+      <div class="oe-scroll">
+        <table data-source="precmap live byrace cvr">
+          <thead><tr><th>Turnout assumption</th><th>Votes left</th><th>Split needed</th></tr></thead>
+          <tbody data-draw="map-path-turnout" data-source="precmap live byrace cvr"></tbody>
+        </table>
+      </div>
+      <div class="oe-keys" data-draw="map-key" data-source="precmap live byrace cvr">—</div>
+      <div class="oe-map" data-draw="map-view" data-source="precmap live byrace cvr"></div>
+      <h3>Areas with the most votes left</h3>
+      <div class="oe-scroll">
+        <table data-source="precmap live byrace cvr" data-row-key="key">
+          <thead><tr><th>Area</th><th>Votes left</th><th>Expected gain</th><th>Trailing candidate so far</th><th>Trailing candidate needs</th></tr></thead>
+          <tbody data-draw="map-table" data-source="precmap live byrace cvr"></tbody>
+        </table>
+      </div>
+      <p class="oe-sub">Challengers are green and incumbents are red. Results use fixed point gaps, and in Districts 4 and 6 they're final-round votes. The other two views set their color groups from that district's areas, so compare those colors within a district, not across districts. Expected gain assumes each area's remaining votes split like its votes so far. Late mail may split differently. The needs column adds the same shift to every area, one simple way to reach the winning total. In Districts 4 and 6, shares are final-round votes after ranked-choice transfers. Sources: Alameda County cast vote record, precinct maps and certified 2022 vote statement, and City of Oakland neighborhood map. Unofficial results as of November 4 at 2:26 AM.</p>
+    </article>
+    <h2 id="ballot-file">What the county's ballot-level file shows</h2>
+    <p class="oe-sub">From the county's cast vote record, exported November 4 at 2:26 AM. It covers only ballots counted by then, so it won't change as new results post. Its final ranked-choice totals match the county's in all three races. This page shows combined totals only, with no ballot-level or precinct-level data. Uncounted mail isn't included, so these patterns are clues rather than results, and scan date isn't the same as the date a voter returned a ballot.</p>
+    <div class="oe-moves" data-draw="ballot-file" data-source="cvr live byrace">—</div>
+  </section>
+
+  <section class="oe-card" id="measure-ee">
+    <h2>Measure EE</h2>
+    <p class="oe-sub">City charter changes that would give the mayor more authority. <span data-draw="ee-needs" data-source="live">—</span></p>
+    <div data-draw="ee" data-source="live byrace">—</div>
+  </section>
+
+  <section class="oe-sec" id="turnout">
+    <h2>Turnout and ballots</h2>
+    <div class="oe-grid">
+      <article class="oe-card" id="returned">
+        <h3>Oakland mail ballots: returned vs outstanding</h3>
+        <div data-draw="oak-returns" data-source="live">—</div>
+        <p class="oe-sub">Outstanding means issued and not yet logged as returned. Many of these voters will vote in person or not at all. Ballots postmarked by November 3 count if received by November 10.</p>
+      </article>
+      <article class="oe-card" id="expected">
+        <h3>Measure EE: estimated votes and win number</h3>
+        <div data-draw="expected" data-source="byrace">—</div>
+        <p class="oe-sub">An estimate, not a forecast. The range runs from Oakland's 2022 vote rate to that rate raised by how much higher countywide turnout was in 2018 than in 2022. The estimate is the midpoint, and the win number is one vote more than half of it.</p>
+      </article>
+    </div>
+    <article class="oe-card" id="midterms">
+      <h3>Past midterms</h3>
+      <div class="oe-scroll">
+        <table data-source="midterms" data-row-key="key">
+          <thead><tr><th data-field="key">Area</th><th data-field="returned">Returned now</th><th data-field="issued">Issued now</th><th data-field="now">Now %</th><th data-field="returned_2022">2022 returned</th><th data-field="issued_2022">2022 issued</th><th data-field="rate_2022">2022 %</th><th data-field="returned_2018">2018 returned</th><th data-field="issued_2018">2018 issued</th><th data-field="rate_2018">2018 %</th><th data-field="to_2022">Still needed to match 2022 %</th></tr></thead>
+          <tbody data-draw="midterms"></tbody>
+        </table>
+      </div>
+      <p class="oe-sub">Finals only: the county doesn't publish past years hour by hour, so tonight's share will sit below these until counting finishes. In 2018 only about 70% of voters were mailed a ballot, so its mail rate isn't a like-for-like comparison. Countywide turnout including in-person voting was <span data-draw="county-2022" data-source="comparison">—</span> in 2022 and <span data-draw="county-2018" data-source="comparison">—</span> in 2018.</p>
+    </article>
+    <div class="oe-grid">
+      <article class="oe-card" id="party">
+        <h3>Oakland returns by party</h3>
+        <div class="oe-rows" data-draw="party" data-source="live">—</div>
+      </article>
+      <article class="oe-card" id="trend">
+        <h3>Oakland mail ballots returned over time</h3>
+        <div class="oe-chart" data-draw="trend" data-source="live"></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="oe-card" id="every-race">
+    <h2>Every race</h2>
+    <p class="oe-sub">Ballot figures cover each race's voting area. The county doesn't report ballots cast by race, so votes counted is the sum of votes for all choices. Measure RTM is shown for all of Alameda County, since the county doesn't split it by city.</p>
+    <div class="oe-scroll">
+      <table data-source="byrace" data-row-key="key">
+        <thead><tr><th data-field="race">Race</th><th data-field="votes_total">Votes counted</th><th data-field="reporting">Precincts</th><th data-field="issued">Mail issued</th><th data-field="returned">Returned</th><th data-field="outstanding">Outstanding</th><th data-field="returned_pct">Returned now</th><th data-field="rate_2022">2022 final</th><th data-field="rate_2018">2018 final</th><th data-field="votes_2022">2022 votes</th><th data-field="expected_low">Likely votes, low</th><th data-field="expected_high">Likely votes, high</th><th data-field="expected_mid">Estimated votes</th><th data-field="win_at">Estimated to win</th><th data-field="leader_votes">Yes or leader now</th><th data-field="to_win">Votes to go</th></tr></thead>
+        <tbody data-draw="races"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="oe-sec" id="other-races">
+    <h2>Other Oakland races</h2>
+    <div class="oe-grid" data-draw="others" data-source="live byrace">—</div>
+  </section>
+
+  <p class="oe-note">Sources: Alameda County Registrar of Voters (results and ballot data) and the California Secretary of State's Statement of Vote (2018 and 2022 turnout).</p>
+</div>
+<script>
+  const fmt = d3.format(',');
+  const ALLOWED = 'https://alamedacountyca.gov/';
+  const live = () => { const g = dash.data('live'); return g.status === 'ok' ? g.data : null; };
+  const of = (rows, kind) => rows.filter((r) => r.kind === kind);
+  const one = (rows, key) => rows.find((r) => r.key === key);
+  const when = (iso) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' PT' : '—';
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+  const pct = (a, b) => b ? a / b * 100 : 0;
+  const bar = (parts, mid) => {
+    const b = el('div', 'oe-bar');
+    parts.forEach(([w, c]) => { const i = el('i'); i.style.width = w + '%'; i.style.background = c; b.append(i); });
+    if (mid) b.append(el('span', 'oe-mid'));
+    return b;
+  };
+  const dash0 = (n) => { n.replaceChildren('—'); };
+  const text = (name, fn) => dash.draw(name, (n) => {
+    const rows = live();
+    if (!rows) return dash0(n);
+    n.textContent = fn(rows);
+  });
+
+  dash.calc('byrace', {
+    title: 'Race ballots vs past midterms',
+    description: 'Each race joined to its area: likely votes scale the 2022 vote rate to mail ballots issued now, up to the county 2018-to-2022 turnout ratio; the estimate is the midpoint, and the win number is one more than half of it.',
+    inputs: ['live', 'comparison'],
+    fn: (live, comparison) => {
+      const c18 = comparison.find((r) => r.key === '2018').turnout_pct;
+      const c22 = comparison.find((r) => r.key === '2022').turnout_pct;
+      return live.filter((r) => r.kind === 'race').map((r) => {
+        const a = live.find((x) => x.kind === 'returns' && x.key === r.area) || {};
+        const h = comparison.find((x) => x.kind === 'area' && x.key === r.area) || {};
+        const c = comparison.find((x) => x.kind === 'race' && x.key === r.key) || {};
+        const low = Math.round(c.votes_2022 / h.issued_2022 * a.issued);
+        const high = Math.round(low * c18 / c22);
+        const mid = Math.round((low + high) / 2);
+        const first = live.filter((x) => x.kind === 'choice' && x.race_id === r.key);
+        const rcv = live.filter((x) => x.kind === 'rcv' && x.race_id === r.key);
+        const counted = (rcv.length ? rcv : first);
+        const leader = r.group === 'Measures' ? counted.find((x) => x.choice === 'Yes') : [...counted].sort((x, y) => y.votes - x.votes)[0];
+        const decided = first.length > 1 && r.key !== 'RTM';
+        const finalRound = first.length > 2 && rcv.length ? d3.sum(rcv, (x) => x.votes) / r.votes_total : 1;
+        const win_at = decided ? Math.floor(mid * finalRound / 2) + 1 : null;
+        return { key: r.key, race: r.race, priority: r.priority, votes_total: r.votes_total,
+          reporting: r.precincts_reported + ' of ' + r.precincts_total,
+          issued: a.issued, returned: a.returned, outstanding: a.outstanding, returned_pct: a.returned_pct,
+          rate_2022: h.rate_2022, rate_2018: h.rate_2018, votes_2022: c.votes_2022, compare_label: c.compare_label,
+          expected_low: low, expected_high: high, expected_mid: mid, win_at,
+          leader: leader && leader.votes ? leader.choice : null, leader_votes: leader ? leader.votes : 0,
+          to_win: win_at === null ? null : Math.max(0, win_at - (leader ? leader.votes : 0)),
+          unopposed: first.length === 1 };
+      });
+    },
+  });
+  dash.calc('midterms', {
+    title: 'Mail returned vs past midterms',
+    description: 'Share of issued mail ballots returned now, beside the final 2022 and 2018 shares for the same area, and ballots still needed to reach the 2022 share.',
+    inputs: ['live', 'comparison'],
+    fn: (live, comparison) => live.filter((r) => r.kind === 'returns').map((r) => {
+      const h = comparison.find((x) => x.kind === 'area' && x.key === r.key) || {};
+      return { key: r.area, returned: r.returned, issued: r.issued, now: r.returned_pct,
+        returned_2022: h.returned_2022, issued_2022: h.issued_2022, rate_2022: h.rate_2022,
+        returned_2018: h.returned_2018, issued_2018: h.issued_2018, rate_2018: h.rate_2018,
+        to_2022: Math.max(0, Math.round(h.rate_2022 / 100 * r.issued) - r.returned) };
+    }),
+  });
+
+  text('takeaway', (rows) => {
+    const s = one(rows, 'status'); const c = one(rows, 'CITY5500'); const ee = one(rows, 'EE');
+    if (!ee.votes_total) return 'No votes reported yet. Oakland has ' + fmt(c.returned) + ' mail ballots back of ' + fmt(c.issued) + ' issued, with first results due shortly after 8 PM.';
+    const y = of(rows, 'choice').find((x) => x.key === 'EE|Yes');
+    return 'Measure EE is at ' + y.pct.toFixed(1) + '% Yes with ' + fmt(ee.votes_total) + ' votes counted, as of the county’s ' + s.county_report + '.';
+  });
+  text('county-time', (rows) => one(rows, 'status').county_updated.replace(';', ' at'));
+  text('county-report', (rows) => one(rows, 'status').county_report);
+  text('checked-time', (rows) => when(one(rows, 'status').checked_at));
+  text('results-seen', (rows) => when(one(rows, 'status').results_changed));
+  text('returns-seen', (rows) => when(one(rows, 'status').returns_changed));
+  text('ee-needs', (rows) => one(rows, 'EE').needs + '.');
+  dash.draw('problem', (n) => {
+    const rows = live();
+    const p = rows ? one(rows, 'status').problem : '';
+    n.textContent = p ? 'The latest check had a problem, so some numbers may be old: ' + p : '';
+  });
+  dash.draw('county-2022', (n) => { const g = dash.data('comparison'); const c = g.status === 'ok' ? one(g.data, '2022') : null; n.textContent = c ? fmt(c.total) + ' of ' + fmt(c.registered) + ' registered voters (' + c.turnout_pct + '%)' : '—'; });
+  dash.draw('county-2018', (n) => { const g = dash.data('comparison'); const c = g.status === 'ok' ? one(g.data, '2018') : null; n.textContent = c ? fmt(c.total) + ' of ' + fmt(c.registered) + ' registered voters (' + c.turnout_pct + '%)' : '—'; });
+
+  const raceMeta = (r) => {
+    const m = el('div', 'oe-meta');
+    m.append(el('span', '', fmt(r.votes_total) + ' votes counted'), el('span', '', r.precincts_reported + ' of ' + r.precincts_total + ' precincts'));
+    return m;
+  };
+  const areaLine = (rows, r) => {
+    const a = one(rows, r.area);
+    return a ? el('p', 'oe-sub', a.area + ': ' + fmt(a.returned) + ' mail ballots returned, ' + fmt(a.outstanding) + ' outstanding (' + a.returned_pct.toFixed(1) + '%).') : el('span');
+  };
+  let focusAfterDraw = null;
+  const isOusd = (id) => id === 'OUSD2' || id === 'OUSD4' || id === 'OUSD6';
+  const isIncumbent = (name) => /brouhard|hutchinson|bachelor/i.test(name);
+  const candColor = (name) => (isIncumbent(name) ? 'var(--oe-incumbent)' : 'var(--oe-challenger)');
+  const scenario = (rows, id, pick) => {
+    const w = one(dash.data('byrace').data, id);
+    const race = one(rows, id);
+    const issued = one(rows, race.area).issued;
+    const firsts = of(rows, 'choice').filter((c) => c.race_id === id);
+    const finals = of(rows, 'rcv').filter((c) => c.race_id === id && c.votes > 0);
+    const useFinal = firsts.length > 2 && finals.length === 2;
+    const counted = (useFinal ? finals : firsts).map((c) => c.votes).sort((a, b) => b - a);
+    const countedTotal = d3.sum(counted);
+    const finalRatio = useFinal ? countedTotal / race.votes_total : 1;
+    const basePct = w.expected_mid / issued * 100;
+    const setPct = pick !== undefined ? pick : dash.params()['turnout_' + id];
+    const floorPct = Math.ceil(race.votes_total / issued * 1000) / 10;
+    const pct = Math.max(setPct === null || setPct === undefined ? basePct : setPct, floorPct);
+    const expected = pct / 100 * issued;
+    const finalVotes = expected * finalRatio;
+    const left = Math.max(0, Math.round(finalVotes - countedTotal));
+    const winAt = Math.floor(finalVotes / 2) + 1;
+    const lead = counted[0];
+    const trail = counted[1];
+    const trailNeeds = left > 0 ? (left + lead - trail) / 2 / left * 100 : null;
+    return { pct, basePct, floorPct, issued, expected: Math.round(expected), left, winAt, lead, trail, trailNeeds,
+      lowPct: w.expected_low / issued * 100, highPct: w.expected_high / issued * 100,
+      countedPct: race.votes_total / issued * 100, returnedPct: one(rows, race.area).returned_pct,
+      changed: setPct !== null && setPct !== undefined };
+  };
+  const winLine = (key) => {
+    const g = dash.data('byrace');
+    const w = g.status === 'ok' ? one(g.data, key) : null;
+    if (!w) return el('span');
+    if (isOusd(key)) {
+      const sc = scenario(live(), key);
+      const person = key === 'EE' || key === 'FF' ? 'Yes' : w.leader;
+      const gap = Math.max(0, sc.winAt - sc.lead);
+      const text = `Estimated to win: ${fmt(sc.winAt)} votes, of about ${fmt(Math.round(sc.lead + sc.trail + sc.left))} expected.`;
+      return el('p', 'oe-win', sc.lead ? `${text} ${person}${gap ? ' is ' + fmt(gap) + ' away.' : ' has passed it.'}` : text);
+    }
+    if (w.unopposed) return el('p', 'oe-win', 'Unopposed.');
+    if (w.win_at === null) return el('p', 'oe-win', 'Decided across five counties, so Alameda County alone has no win number.');
+    const who = key === 'EE' || key === 'FF' ? 'Yes' : w.leader;
+    const line = 'Estimated to win: ' + fmt(w.win_at) + ' votes, of about ' + fmt(w.expected_mid) + ' expected.';
+    if (!w.leader_votes) return el('p', 'oe-win', line);
+    return el('p', 'oe-win', line + ' ' + who + (w.to_win ? ' is ' + fmt(w.to_win) + ' away.' : ' has passed it.'));
+  };
+  const raceCard = (rows, r) => {
+    const card = el('article', 'oe-card');
+    card.id = 'race-' + r.key;
+    card.append(el('h3', '', r.race));
+    const list = el('div', 'oe-rows');
+    const kind = of(rows, 'rcv').some((c) => c.race_id === r.key) ? 'rcv' : 'choice';
+    const choices = of(rows, kind).filter((c) => c.race_id === r.key).sort((a, b) => b.votes - a.votes);
+    choices.forEach((c, i) => {
+      const row = el('div', 'oe-row');
+      row.append(el('span', '', c.choice), el('span', '', fmt(c.votes) + ' · ' + c.pct.toFixed(1) + '%'), bar([[c.pct, isOusd(r.key) ? candColor(c.choice) : dash.colors[i === 0 ? 0 : 2]]]));
+      list.append(row);
+    });
+    card.append(list, winLine(r.key), raceMeta(r));
+    if (kind === 'rcv') card.append(el('p', 'oe-sub', 'Final ranked-choice round after ' + r.rcv_rounds + ' round' + (r.rcv_rounds === 1 ? '' : 's') + '.'));
+    card.append(areaLine(rows, r));
+    if (r.rcv_url && r.rcv_url.startsWith(ALLOWED)) {
+      const a = el('a', 'oe-sub', 'County ranked-choice report');
+      a.href = r.rcv_url; a.target = '_blank'; a.rel = 'noopener';
+      card.append(a);
+    }
+    return card;
+  };
+  const cards = (name, test) => dash.draw(name, (n) => {
+    const rows = live();
+    if (!rows) return dash0(n);
+    n.replaceChildren(...of(rows, 'race').filter(test).map((r) => raceCard(rows, r)));
+  });
+  cards('ousd', (r) => r.group === 'OUSD');
+  cards('others', (r) => r.priority === 2);
+
+  dash.draw('ee', (n) => {
+    const rows = live();
+    if (!rows) return dash0(n);
+    const r = one(rows, 'EE'); const yes = one(rows, 'EE|Yes'); const no = one(rows, 'EE|No');
+    const big = el('div', 'oe-big');
+    [['Yes', yes], ['No', no]].forEach(([label, c]) => {
+      const d = el('div');
+      d.append(el('b', '', r.votes_total ? c.pct.toFixed(1) + '%' : '—'), el('span', 'oe-label', label + ': ' + fmt(c.votes) + ' votes'));
+      big.append(d);
+    });
+    const wrap = el('div', 'oe-rows');
+    wrap.append(big, bar([[yes.pct, dash.colors[0]], [no.pct, dash.colors[1]]], true), winLine('EE'), raceMeta(r), areaLine(rows, r));
+    n.replaceChildren(wrap);
+  });
+
+  dash.draw('oak-returns', (n) => {
+    const rows = live();
+    if (!rows) return dash0(n);
+    const c = one(rows, 'CITY5500');
+    const big = el('div', 'oe-big');
+    [['Returned', c.returned], ['Outstanding', c.outstanding]].forEach(([label, v]) => {
+      const d = el('div'); d.append(el('b', '', fmt(v)), el('span', 'oe-label', label)); big.append(d);
+    });
+    const wrap = el('div', 'oe-rows');
+    wrap.append(big, bar([[c.returned_pct, dash.colors[0]]]), el('p', 'oe-sub', c.returned_pct.toFixed(1) + '% of ' + fmt(c.issued) + ' issued'));
+    n.replaceChildren(wrap);
+  });
+
+  dash.draw('expected', (n) => {
+    const g = dash.data('byrace');
+    if (g.status !== 'ok') return dash0(n);
+    const r = one(g.data, 'EE');
+    const big = el('div', 'oe-big');
+    const d = el('div');
+    d.append(el('b', '', fmt(r.expected_mid)), el('span', 'oe-label', 'Estimated votes (' + fmt(r.expected_low) + ' to ' + fmt(r.expected_high) + ')'));
+    const w = el('div');
+    w.append(el('b', '', fmt(r.win_at)), el('span', 'oe-label', 'Yes votes estimated to win'));
+    big.append(d, w);
+    const wrap = el('div', 'oe-rows');
+    wrap.append(big, bar([[Math.min(100, pct(r.votes_total, r.expected_high)), dash.colors[0]]]), el('p', 'oe-sub', fmt(r.votes_total) + ' counted so far. Compared with ' + fmt(r.votes_2022) + ' votes: ' + r.compare_label + '.'));
+    n.replaceChildren(wrap);
+  });
+
+  const shortName = (name) => {
+    const n = name.trim();
+    if (n === 'Alexandra Williams') return 'A. Williams';
+    if (n === 'Sylvia Pfeiffer Williams') return 'Pfeiffer Williams';
+    return n.split(' ').pop();
+  };
+  const tipOn = (host) => {
+    const box = el('div', 'oe-tip');
+    box.hidden = true;
+    host.append(box);
+    return (node, text) => {
+      node.addEventListener('mouseenter', () => {
+        box.textContent = text;
+        box.hidden = false;
+        const hostBox = host.getBoundingClientRect();
+        const at = node.getBoundingClientRect();
+        const left = Math.min(Math.max(0, at.left - hostBox.left + 8), Math.max(0, hostBox.width - box.offsetWidth));
+        box.style.left = left + 'px';
+        box.style.top = Math.max(0, at.top - hostBox.top - box.offsetHeight - 6) + 'px';
+      });
+      node.addEventListener('mouseleave', () => { box.hidden = true; });
+    };
+  };
+  const drawMove = (host, { posts, series, modeled }) => {
+    const width = Math.max(host.clientWidth, 560);
+    const height = 410;
+    const m = { t: 18, r: 138, b: 82, l: 66 };
+    const x = d3.scaleBand(posts.map((p, i) => i), [m.l, width - m.r]).paddingInner(0.24).paddingOuter(0.12);
+    const y = d3.scaleLinear([0, 100], [height - m.b, m.t]);
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).attr('role', 'img');
+    const add = (kind, attrs, text) => {
+      const node = svg.append(kind);
+      Object.entries(attrs).forEach(([k, v]) => node.attr(k, v));
+      if (text !== undefined) node.text(text);
+      return node;
+    };
+    [0, 25, 75, 100].forEach((t) => add('line', { x1: m.l, x2: width - m.r, y1: y(t), y2: y(t), stroke: 'var(--cds-chart-grid)', 'stroke-width': 1 }));
+    [0, 25, 50, 75, 100].forEach((t) => add('text', { x: m.l - 8, y: y(t) + 4, 'text-anchor': 'end' }, t + '%'));
+    add('text', { transform: `translate(16 ${(m.t + height - m.b) / 2}) rotate(-90)`, 'text-anchor': 'middle', class: 'oe-ink' }, 'Share of votes (%)');
+    const hits = [];
+    posts.forEach((p, i) => {
+      const before = i ? posts[i - 1] : null;
+      const added = series.map((s) => p.votes[s.full] - (before ? before.votes[s.full] : 0));
+      const size = d3.sum(added);
+      let floor = 0;
+      series.forEach((s, j) => {
+        const share = size > 0 ? added[j] / size * 100 : 0;
+        const top = y(floor + share);
+        const base = y(floor);
+        const bar = add('rect', { x: x(i), width: x.bandwidth(), y: top + (j ? 0 : 1), height: Math.max(0, base - top - 1), fill: s.color, 'fill-opacity': 0.3 });
+        hits.push({ node: bar.node(), text: `${p.at}, ${s.name}: ${fmt(added[j])} of ${fmt(size)} new votes (${share.toFixed(1)}%)` });
+        if (share >= 8) add('text', { x: x(i) + x.bandwidth() / 2, y: (top + base) / 2 + 4, 'text-anchor': 'middle', class: 'oe-ink' }, share.toFixed(1) + '%');
+        floor += share;
+      });
+      const mid = x(i) + x.bandwidth() / 2;
+      add('text', { x: mid, y: height - m.b + 19, 'text-anchor': 'middle', class: 'oe-strong' }, p.at);
+      if (x.step() >= 96) add('text', { x: mid, y: height - m.b + 36, 'text-anchor': 'middle' }, p.report.replace('Election night final', 'Night final'));
+      add('text', { x: mid, y: height - m.b + (x.step() >= 96 ? 53 : 36), 'text-anchor': 'middle' }, (size >= 0 ? '+' : '') + fmt(size) + ' votes');
+    });
+    add('line', { x1: m.l, x2: width - m.r, y1: y(50), y2: y(50), stroke: 'var(--cds-chart-reference)', 'stroke-width': 1.5, 'stroke-dasharray': '6 4' });
+    add('line', { x1: m.l, x2: width - m.r, y1: y(0), y2: y(0), stroke: 'var(--cds-chart-axis)', 'stroke-width': 1 });
+    add('text', { x: (m.l + width - m.r) / 2, y: height - 8, 'text-anchor': 'middle', class: 'oe-ink' }, 'County results post: time, report and votes added');
+    const share = (p, s) => p.votes[s.full] / p.total * 100;
+    const px = (i) => x(i) + x.bandwidth() / 2;
+    series.forEach((s) => {
+      const line = d3.line().x((p, i) => px(i)).y((p) => y(share(p, s)));
+      add('path', { d: line(posts), fill: 'none', stroke: 'var(--color-panel)', 'stroke-width': 6, 'stroke-linejoin': 'round' });
+      add('path', { d: line(posts), fill: 'none', stroke: s.color, 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': modeled ? '6 4' : null });
+    });
+    posts.forEach((p, i) => {
+      const ranked = [...series].sort((a, b) => share(p, b) - share(p, a));
+      ranked.forEach((s, rank) => {
+        const v = share(p, s);
+        const estimate = modeled && i < posts.length - 1;
+        const dot = add('circle', { cx: px(i), cy: y(v), r: 5.5, fill: estimate ? 'var(--color-panel)' : s.color, stroke: estimate ? s.color : 'var(--color-panel)', 'stroke-width': 2 });
+        hits.push({ node: dot.node(), text: `${p.at}, ${s.name}: ${v.toFixed(1)}% of all votes counted (${fmt(p.votes[s.full])}${estimate ? ', estimated' : ''})` });
+        add('text', { x: px(i), y: y(v) + (rank ? 22 : -12), 'text-anchor': 'middle', class: 'oe-strong oe-halo' }, v.toFixed(1) + '%');
+      });
+    });
+    const last = posts[posts.length - 1];
+    const ends = [...series.map((s) => ({ y: y(share(last, s)), text: s.name, color: s.color })), { y: y(50), text: '50% to win' }].sort((a, b) => a.y - b.y);
+    ends.forEach((e, i) => { e.at = i ? Math.max(e.y, ends[i - 1].at + 18) : e.y; });
+    const shift = (ends[ends.length - 1].at - ends[0].at) / 2 - (ends[ends.length - 1].y - ends[0].y) / 2;
+    ends.forEach((e) => {
+      const at = e.at - shift;
+      add('text', { x: width - m.r + 10, y: at + 4, class: e.color ? 'oe-strong' : '' }, e.text);
+    });
+    host.replaceChildren(svg.node());
+    const addTip = tipOn(host);
+    hits.forEach((h) => addTip(h.node, h.text));
+  };
+  dash.draw('ousd-moves', (n) => {
+    const rows = live();
+    const fig = dash.data('byrace');
+    if (!rows || fig.status !== 'ok') return dash0(n);
+    const plots = [];
+    n.replaceChildren(...['OUSD2', 'OUSD4', 'OUSD6'].map((id) => {
+      const cells = of(rows, 'post').filter((p) => p.race_id === id);
+      const names = [...new Set(cells.map((p) => p.choice))];
+      let series = names.map((name, i) => ({ full: name, name: shortName(name), color: candColor(name) }));
+      let posts = [...new Set(cells.map((p) => p.post))].sort((a, b) => a - b).map((post) => {
+        const here = cells.filter((p) => p.post === post);
+        const votes = Object.fromEntries(here.map((p) => [p.choice, p.votes]));
+        return { post, at: here[0].at, report: here[0].report, votes, total: d3.sum(here, (p) => p.votes) };
+      });
+      const race = one(rows, id);
+      const figure = one(fig.data, id);
+      const rounds = of(rows, 'rcv').filter((c) => c.race_id === id && c.votes > 0);
+      const modeled = names.length > 2 && rounds.length === 2;
+      if (modeled) {
+        const upper = (name) => name.trim().toUpperCase();
+        const finalVotes = Object.fromEntries(rounds.map((c) => [upper(c.choice), c.votes]));
+        const out = names.find((name) => !(upper(name) in finalVotes));
+        const latest = posts[posts.length - 1];
+        const rate = (name) => (finalVotes[upper(name)] - latest.votes[name]) / latest.votes[out];
+        series = series.filter((s) => s.full !== out);
+        posts = posts.map((p) => {
+          const votes = Object.fromEntries(series.map((s) => [s.full, Math.round(p.votes[s.full] + rate(s.full) * p.votes[out])]));
+          return { ...p, votes, total: d3.sum(series, (s) => votes[s.full]) };
+        });
+      }
+      const card = el('article', 'oe-card');
+      card.id = 'moves-' + id;
+      series = [...series].sort((a, b) => posts[posts.length - 1].votes[b.full] - posts[posts.length - 1].votes[a.full]);
+      const latest = posts[posts.length - 1];
+      const start = posts[0];
+      const [lead, trail] = series;
+      const margin = latest.votes[lead.full] - latest.votes[trail.full];
+      const since = (s) => latest.votes[s.full] - start.votes[s.full];
+      const sinceTotal = d3.sum(series, since);
+      const chaser = since(trail) > since(lead) ? trail : lead;
+      const chaserShare = sinceTotal > 0 ? since(chaser) / sinceTotal * 100 : 0;
+      const where = modeled ? ' in the final round' : '';
+      const estimated = modeled ? 'an estimated ' : '';
+      const link = chaser === lead ? 'and has' : `, but ${chaser.name} has`;
+      const heading = `${lead.name} leads by ${fmt(margin)}${where} ${link} won ${estimated}${chaserShare.toFixed(1)}% of votes since the first count`.replace(' , but', ', but');
+      card.append(el('span', 'oe-label', race.race.replace('School Director, ', '').replace(' - Oakland', '') + (modeled ? ' · Final ranked-choice round' : '')), el('h3', '', heading));
+      const keys = el('div', 'oe-keys');
+      series.forEach((s) => {
+        const key = el('span');
+        const swatch = el('i');
+        swatch.style.background = s.color;
+        key.append(swatch, s.name);
+        keys.append(key);
+      });
+      const barKey = el('span', '', 'Bars: split of that post\u2019s new votes');
+      const lineKey = el('span', '', modeled ? 'Lines: running share, dashed where estimated' : 'Lines: running share of all votes counted');
+      keys.append(barKey, lineKey);
+      card.append(keys);
+      const plot = el('div', 'oe-move-chart');
+      const body = el('div', 'oe-move-body');
+      const main = el('div', 'oe-move-main');
+      main.append(plot);
+      body.append(main);
+      const steps = of(rows, 'rcvstep').filter((c) => c.race_id === id);
+      if (modeled && steps.length) {
+        const stepIds = [...new Set(steps.map((c) => c.step))].sort((a, b) => a - b);
+        const side = el('aside', 'oe-move-side');
+        const noneColor = 'var(--cds-chart-muted)';
+        const split = (step) => {
+          const here = steps.filter((c) => c.step === step);
+          const third = here.find((c) => c.final_votes === 0);
+          const ballots = third.first_votes;
+          const to = series.map((s) => {
+            const row = here.find((c) => c.choice === s.full.trim().toUpperCase());
+            return { label: 'To ' + s.name, color: s.color, votes: row.final_votes - row.first_votes };
+          });
+          const moved = d3.sum(to, (t) => t.votes);
+          return { at: here[0].at, third, ballots, parts: [...to, { label: 'No next choice', color: noneColor, votes: ballots - moved }] };
+        };
+        const latestSplit = split(stepIds[stepIds.length - 1]);
+        const thirdName = shortName(latestSplit.third.choice.replace(/\w\S*/g, (w) => w[0] + w.slice(1).toLowerCase()));
+        const top = [...latestSplit.parts.slice(0, 2)].sort((a, b) => b.votes - a.votes)[0];
+        side.append(el('span', 'oe-label', 'Third-place transfers'), el('h3', '', `${thirdName}'s ballots favored ${top.label.replace('To ', '')} ${(top.votes / latestSplit.ballots * 100).toFixed(1)}% to ${(latestSplit.parts.slice(0, 2).find((p) => p !== top).votes / latestSplit.ballots * 100).toFixed(1)}%`));
+        const keysBox = el('div', 'oe-keys');
+        latestSplit.parts.forEach((p) => {
+          const key = el('span');
+          const swatch = el('i');
+          swatch.style.background = p.color;
+          key.append(swatch, p.label.replace('To ', ''));
+          keysBox.append(key);
+        });
+        side.append(keysBox);
+        const sideTip = tipOn(side);
+        side.style.position = 'relative';
+        stepIds.forEach((step) => {
+          const info = split(step);
+          const row = el('div', 'oe-side-row');
+          row.append(el('span', 'oe-label', `County rounds as of ${info.at} (${fmt(info.ballots)} ballots)`));
+          const stack = el('div', 'oe-side-stack');
+          info.parts.forEach((p) => {
+            const pct = p.votes / info.ballots * 100;
+            const seg = el('i', '', pct >= 12 ? pct.toFixed(1) + '%' : '');
+            seg.style.width = pct + '%';
+            seg.style.background = p.color;
+            seg.style.opacity = '0.75';
+            sideTip(seg, `${info.at}, ${p.label}: ${fmt(p.votes)} ballots (${pct.toFixed(1)}%)`);
+            stack.append(seg);
+          });
+          row.append(stack);
+          side.append(row);
+        });
+        const table = el('table', 'oe-side-table');
+        const thead = el('thead');
+        const headRow = el('tr');
+        ['Where ballots went', 'Ballots', 'Share'].forEach((t) => headRow.append(el('th', '', t)));
+        thead.append(headRow);
+        const tbody = el('tbody');
+        latestSplit.parts.forEach((p) => {
+          const tr = el('tr');
+          [p.label, fmt(p.votes), (p.votes / latestSplit.ballots * 100).toFixed(1) + '%'].forEach((t) => tr.append(el('td', '', t)));
+          tbody.append(tr);
+        });
+        table.append(thead, tbody);
+        side.append(table);
+        side.append(el('p', 'oe-sub', stepIds.length > 1 ? 'Each row is a later county ranked-choice report.' : 'One county ranked-choice report so far. A new row is added each time the county posts new rounds, which will show the trend.'));
+        body.append(side);
+      }
+      card.append(body);
+      const stats = el('div', 'oe-stats');
+      const tile = (label) => {
+        const box = el('div');
+        const value = el('b');
+        const note = el('span', 'oe-label');
+        box.append(el('span', 'oe-label', label), value, note);
+        stats.append(box);
+        return { value, note };
+      };
+      const winTile = tile('Estimated votes to win');
+      const leadTile = tile(`${lead.name} still needs`);
+      const trailTile = tile(`${trail.name} still needs`);
+      const shareTile = tile(`${trail.name} needs of votes left`);
+      const sliderId = 'turnout-' + id;
+      const plan = scenario(rows, id);
+      const panel = el('div', 'oe-turnout');
+      const top = el('div', 'oe-turnout-top');
+      const label = el('label', '', 'Expected turnout in this race');
+      label.htmlFor = sliderId;
+      const output = el('output');
+      output.htmlFor = sliderId;
+      top.append(label, output);
+      const slider = el('input');
+      slider.type = 'range';
+      slider.id = sliderId;
+      slider.min = String(plan.floorPct);
+      slider.max = '85';
+      slider.step = '0.1';
+      slider.value = String(plan.pct);
+      slider.setAttribute('aria-label', 'Expected turnout in ' + race.race);
+      const explain = el('p', 'oe-sub');
+      const presets = el('div', 'oe-presets');
+      const paint = (sc) => {
+        output.textContent = sc.pct.toFixed(1) + '%';
+        slider.setAttribute('aria-valuetext', sc.pct.toFixed(1) + ' percent');
+        explain.textContent = `${sc.changed ? 'Your scenario' : 'Starting assumption'}: votes in this race equal ${sc.pct.toFixed(1)}% of the ${fmt(sc.issued)} ballots issued, or about ${fmt(sc.expected)} first-choice votes. The start is ${sc.basePct.toFixed(1)}%, midway between the 2022 rate (${sc.lowPct.toFixed(1)}%) and that rate raised for 2018's higher county turnout (${sc.highPct.toFixed(1)}%). So far, ${sc.countedPct.toFixed(1)}% is counted and ${sc.returnedPct.toFixed(1)}% of mail ballots were logged as returned, though returned ballots can be blank in this race.`;
+        winTile.value.textContent = fmt(sc.winAt);
+        winTile.note.textContent = sc.changed ? `Starting estimate: ${fmt(scenario(rows, id, sc.basePct).winAt)}` : 'Half of expected votes, plus one';
+        leadTile.value.textContent = fmt(Math.max(0, sc.winAt - sc.lead));
+        leadTile.note.textContent = `Has ${fmt(sc.lead)} votes`;
+        trailTile.value.textContent = fmt(Math.max(0, sc.winAt - sc.trail));
+        trailTile.note.textContent = `Has ${fmt(sc.trail)} votes`;
+        if (sc.trailNeeds === null) {
+          shareTile.value.textContent = 'None left';
+          shareTile.note.textContent = 'At this turnout, no votes remain';
+        } else if (sc.trailNeeds > 100) {
+          shareTile.value.textContent = 'Out of reach';
+          shareTile.note.textContent = `Lead is larger than the ${fmt(sc.left)} votes left`;
+        } else {
+          shareTile.value.textContent = sc.trailNeeds.toFixed(1) + '%';
+          shareTile.note.textContent = `Of about ${fmt(sc.left)} votes left`;
+        }
+      };
+      const choose = (value, control) => {
+        focusAfterDraw = control;
+        dash.setParams({ ['turnout_' + id]: value });
+      };
+      slider.addEventListener('input', () => paint(scenario(rows, id, Number(slider.value))));
+      slider.addEventListener('change', () => choose(Number(slider.value), sliderId));
+      [['2022 rate', plan.lowPct], ['Midpoint', plan.basePct], ['2018-adjusted rate', plan.highPct]].forEach(([name, value], i) => {
+        const button = el('button', '', `${name} (${value.toFixed(1)}%)`);
+        button.type = 'button';
+        button.id = `${sliderId}-p${i}`;
+        button.setAttribute('aria-pressed', String(Math.abs(plan.pct - value) < 0.05));
+        button.addEventListener('click', () => choose(value, button.id));
+        presets.append(button);
+      });
+      const reset = el('button', '', 'Reset');
+      reset.type = 'button';
+      reset.id = `${sliderId}-reset`;
+      reset.addEventListener('click', () => choose(null, sliderId));
+      presets.append(reset);
+      panel.append(top, slider, presets, explain);
+      card.append(panel, stats);
+      paint(plan);
+      const status = one(rows, 'status');
+      card.append(el('p', 'oe-sub', `Source: Alameda County Registrar of Voters, unofficial results as of ${status.county_updated.replace(';', ' at')}. Late mail is mostly uncounted, so these trends may not continue.`));
+      plots.push(() => drawMove(plot, { posts, series, modeled }));
+      return card;
+    }));
+    plots.forEach((draw) => draw());
+    if (focusAfterDraw) {
+      const target = document.getElementById(focusAfterDraw);
+      focusAfterDraw = null;
+      if (target) target.focus();
+    }
+  });
+
+  const drawScan = (host, { points, inPerson, needed, candidate, color, opponent }) => {
+    const width = Math.max(host.clientWidth, 480);
+    const height = 310;
+    const m = { t: 18, r: 118, b: 62, l: 66 };
+    const values = [...points.map((p) => p.share), inPerson.share, 50, ...(needed !== null && needed <= 100 ? [needed] : [])];
+    const y = d3.scaleLinear([Math.max(0, Math.floor((Math.min(...values) - 6) / 10) * 10), Math.min(100, Math.ceil((Math.max(...values) + 6) / 10) * 10)], [height - m.b, m.t]);
+    const slots = points.length + 1;
+    const x = d3.scaleBand(d3.range(slots), [m.l, width - m.r]).paddingInner(0.2).paddingOuter(0.1);
+    const mid = (i) => x(i) + x.bandwidth() / 2;
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).attr('role', 'img');
+    const add = (kind, attrs, text) => {
+      const node = svg.append(kind);
+      Object.entries(attrs).forEach(([k, v]) => node.attr(k, v));
+      if (text !== undefined) node.text(text);
+      return node;
+    };
+    y.ticks(5).forEach((t) => {
+      add('line', { x1: m.l, x2: width - m.r, y1: y(t), y2: y(t), stroke: 'var(--cds-chart-grid)', 'stroke-width': 1 });
+      add('text', { x: m.l - 8, y: y(t) + 4, 'text-anchor': 'end' }, t + '%');
+    });
+    add('text', { transform: `translate(16 ${(m.t + height - m.b) / 2}) rotate(-90)`, 'text-anchor': 'middle', class: 'oe-ink' }, `${candidate}'s two-way share`);
+    const refs = [{ value: 50, text: '50%', dash: '2 4' }];
+    if (needed !== null && needed <= 100) refs.push({ value: needed, text: `Needs ${needed.toFixed(1)}%`, dash: '6 4', strong: true });
+    refs.forEach((r) => add('line', { x1: m.l, x2: width - m.r, y1: y(r.value), y2: y(r.value), stroke: 'var(--cds-chart-reference)', 'stroke-width': 1.5, 'stroke-dasharray': r.dash }));
+    const labels = refs.map((r) => ({ y: y(r.value), text: r.text, strong: r.strong })).sort((a, b) => a.y - b.y);
+    labels.forEach((l, i) => { l.at = i ? Math.max(l.y, labels[i - 1].at + 17) : l.y; });
+    labels.forEach((l) => add('text', { x: width - m.r + 8, y: l.at + 4, class: l.strong ? 'oe-strong' : '' }, l.text));
+    const line = d3.line().x((p, i) => mid(i)).y((p) => y(p.share));
+    add('path', { d: line(points), fill: 'none', stroke: 'var(--color-panel)', 'stroke-width': 6, 'stroke-linejoin': 'round' });
+    add('path', { d: line(points), fill: 'none', stroke: color, 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    const hits = [];
+    const mark = (i, share, label, ballots) => {
+      const dot = add('circle', { cx: mid(i), cy: y(share), r: 5.5, fill: color, stroke: 'var(--color-panel)', 'stroke-width': 2 });
+      hits.push({ node: dot.node(), text: `${label}: ${candidate} ${share.toFixed(1)}% vs. ${opponent} ${(100 - share).toFixed(1)}%, ${fmt(ballots)} ballots` });
+      add('text', { x: mid(i), y: y(share) - 12, 'text-anchor': 'middle', class: 'oe-strong oe-halo' }, share.toFixed(1) + '%');
+      add('text', { x: mid(i), y: height - m.b + 19, 'text-anchor': 'middle', class: 'oe-strong' }, label);
+      add('text', { x: mid(i), y: height - m.b + 36, 'text-anchor': 'middle' }, fmt(ballots));
+    };
+    points.forEach((p, i) => mark(i, p.share, p.period, p.ballots));
+    mark(points.length, inPerson.share, 'In person', inPerson.ballots);
+    const divider = (x(points.length - 1) + x.bandwidth() + x(points.length)) / 2;
+    add('line', { x1: divider, x2: divider, y1: m.t, y2: height - m.b, stroke: 'var(--cds-chart-axis)', 'stroke-width': 1 });
+    add('line', { x1: m.l, x2: width - m.r, y1: height - m.b, y2: height - m.b, stroke: 'var(--cds-chart-axis)', 'stroke-width': 1 });
+    add('text', { x: (m.l + width - m.r) / 2, y: height - 6, 'text-anchor': 'middle', class: 'oe-ink' }, 'Mail by county scan date, then in person (ballots counted)');
+    host.replaceChildren(svg.node());
+    const addTip = tipOn(host);
+    hits.forEach((h) => addTip(h.node, h.text));
+  };
+  dash.draw('ballot-file', (n) => {
+    const rows = live();
+    const fig = dash.data('byrace');
+    const file = dash.data('cvr');
+    if (!rows || fig.status !== 'ok' || file.status !== 'ok') return dash0(n);
+    const plots = [];
+    n.replaceChildren(...['OUSD2', 'OUSD4', 'OUSD6'].map((id) => {
+      const points = of(file.data, 'scan').filter((r) => r.race_id === id).sort((a, b) => a.order - b.order);
+      const inPerson = one(file.data, id + '|In person');
+      const within = of(file.data, 'within').find((r) => r.race_id === id);
+      const candidate = points[0].candidate;
+      const opponent = points[0].opponent;
+      const race = one(rows, id);
+      const names = [...new Set(of(rows, 'post').filter((p) => p.race_id === id).map((p) => p.choice))];
+      const color = candColor(candidate);
+      const sc = scenario(rows, id);
+      const finals = of(rows, 'rcv').filter((c) => c.race_id === id && c.votes > 0);
+      const counts = (names.length > 2 && finals.length === 2 ? finals : of(rows, 'choice').filter((c) => c.race_id === id)).map((c) => ({ name: shortName(c.choice.replace(/\w\S*/g, (w) => w[0] + w.slice(1).toLowerCase())), votes: c.votes }));
+      const mine = counts.find((c) => c.name === candidate);
+      const theirs = counts.find((c) => c.name === opponent);
+      const needed = mine && theirs && sc.left > 0 ? (sc.left + theirs.votes - mine.votes) / 2 / sc.left * 100 : null;
+      const first = points[0];
+      const last = points[points.length - 1];
+      const moved = last.share >= first.share ? 'risen' : 'fallen';
+      const card = el('article', 'oe-card');
+      card.id = 'file-' + id;
+      card.append(el('span', 'oe-label', race.race.replace('School Director, ', '').replace(' - Oakland', '') + ' · Counted ballots only'));
+      const tail = needed === null ? 'with no votes left at this turnout' : needed > 100 ? 'with the lead out of reach at this turnout' : `vs. ${needed.toFixed(1)}% needed of what's left`;
+      card.append(el('h3', '', `${candidate}'s mail share has ${moved} from ${first.share.toFixed(1)}% to ${last.share.toFixed(1)}%, ${tail}`));
+      const grid = el('div', 'oe-file-grid');
+      const main = el('div', 'oe-file-main');
+      const plot = el('div', 'oe-scan-chart');
+      main.append(plot);
+      const side = el('div', 'oe-file-side');
+      side.append(el('h3', '', 'Same-precinct check'), el('p', 'oe-sub', `Comparing early and later mail inside the same precinct, ${candidate} changed ${within.change > 0 ? '+' : ''}${within.change.toFixed(1)} points, moving up in ${within.toward} of ${within.precincts} precincts with enough ballots to compare. So neighborhood mix alone doesn't appear to explain the trend.`));
+      const moves = of(file.data, 'transfer').filter((r) => r.race_id === id);
+      const table = (heads, body) => {
+        const box = el('table');
+        const head = el('thead');
+        const headRow = el('tr');
+        heads.forEach((t) => headRow.append(el('th', '', t)));
+        head.append(headRow);
+        const rowsBox = el('tbody');
+        body.forEach((cells) => {
+          const tr = el('tr');
+          cells.forEach((t) => tr.append(el('td', '', t)));
+          rowsBox.append(tr);
+        });
+        box.append(head, rowsBox);
+        return box;
+      };
+      if (moves.length) {
+        const m = moves[0];
+        side.append(el('h3', '', `Where ${m.from}'s ballots went`), table(['Ballots', m.finalist_a, m.finalist_b, 'No next choice'], moves.map((r) => [`${r.method} (${fmt(r.ballots)})`, r.share_a.toFixed(1) + '%', r.share_b.toFixed(1) + '%', r.share_none.toFixed(1) + '%'])));
+      }
+      if (id === 'OUSD2') {
+        side.append(el('h3', '', 'How council voters split in this race'), table(['Council first choice', 'Fleisher', 'Brouhard'], of(file.data, 'coalition').map((r) => [`${r.council} (${fmt(r.ballots)})`, r.fleisher.toFixed(1) + '%', r.brouhard.toFixed(1) + '%'])));
+      }
+      grid.append(main, side);
+      card.append(grid);
+      plots.push(() => drawScan(plot, { points, inPerson, needed, candidate, color, opponent }));
+      return card;
+    }));
+    plots.forEach((draw) => draw());
+  });
+
+  const mapRace = () => dash.params().map_race || 'D2';
+  let mapSource = null;
+  let mapParsed = null;
+  const mapRows = () => {
+    const g = dash.data('precmap');
+    if (g.status !== 'ok') return null;
+    if (g.data !== mapSource) {
+      mapSource = g.data;
+      mapParsed = g.data.map((r) => ({ ...r,
+        shape: typeof r.shape === 'string' ? JSON.parse(r.shape) : r.shape,
+        shown: r.shown === true || r.shown === 'true',
+        share_b: r.share_b === null || r.share_b === '' ? null : Number(r.share_b),
+        share_a: r.share_a === null || r.share_a === '' ? null : Number(r.share_a),
+        now: r.now === null || r.now === '' ? null : Number(r.now),
+        now_pct: r.now_pct === null || r.now_pct === '' ? null : Number(r.now_pct),
+        t22: r.t22 === null || r.t22 === '' ? null : Number(r.t22),
+        t24: r.t24 === null || r.t24 === '' ? null : Number(r.t24),
+        votes_a: r.votes_a === null || r.votes_a === '' ? null : Number(r.votes_a),
+        votes_b: r.votes_b === null || r.votes_b === '' ? null : Number(r.votes_b),
+        x: Number(r.x), y: Number(r.y), size: Number(r.size) }));
+    }
+    return mapParsed;
+  };
+  const ringCenter = (ring) => {
+    let area = 0;
+    let x = 0;
+    let y = 0;
+    ring.forEach((p, i) => {
+      const q = ring[(i + 1) % ring.length];
+      const cross = p[0] * q[1] - q[0] * p[1];
+      area += cross;
+      x += (p[0] + q[0]) * cross;
+      y += (p[1] + q[1]) * cross;
+    });
+    return area ? { size: Math.abs(area) / 2, x: x / (3 * area), y: y / (3 * area) } : { size: 0, x: ring[0][0], y: ring[0][1] };
+  };
+  const niceBreaks = (values, shares) => {
+    const sorted = [...values].sort(d3.ascending);
+    const step = sorted[sorted.length - 1] >= 500 ? 25 : 10;
+    let previous = 0;
+    return shares.map((share) => {
+      previous = Math.max(Math.round(d3.quantileSorted(sorted, share) / step) * step, previous + step);
+      return previous;
+    });
+  };
+  const leadBins = (m) => {
+    const b = [5, 10, 20];
+    const toChallenger = (r) => (isIncumbent(m.a) ? r.shareB - r.shareA : r.shareA - r.shareB);
+    return {
+      color: (r) => {
+        if (!r.shown) return 'var(--color-border-line)';
+        const value = toChallenger(r);
+        const step = d3.bisectRight(b, Math.abs(value));
+        return step === 0 ? 'var(--oe-n)' : `var(--oe-${value > 0 ? 'c' : 'i'}${step})`;
+      },
+      key: [['var(--oe-c3)', '+20 or more'], ['var(--oe-c2)', '+10-20'], ['var(--oe-c1)', '+5-10'], ['var(--oe-n)', 'Within 5'],
+        ['var(--oe-i1)', '+5-10'], ['var(--oe-i2)', '+10-20'], ['var(--oe-i3)', '+20 or more']],
+    };
+  };
+  const mapBins = (m, metric) => (metric === 'left' ? leftBins(m) : metric === 'net' ? gainBins(m) : leadBins(m));
+  const leftBins = (m) => {
+    const breaks = niceBreaks(m.areas.map((r) => r.left), [1, 2, 3, 4, 5, 6].map((i) => i / 7));
+    return {
+      color: (r) => `var(--oe-s${d3.bisectRight(breaks, r.left) + 1})`,
+      key: [1, 2, 3, 4, 5, 6, 7].map((i) => [`var(--oe-s${i})`,
+        i === 1 ? `Under ${fmt(breaks[0])}` : i === 7 ? `${fmt(breaks[5])}+` : `${fmt(breaks[i - 2])}-${fmt(breaks[i - 1])}`]),
+    };
+  };
+  const gainBins = (m) => {
+    const b = niceBreaks(m.areas.map((r) => Math.abs(r.gain)), [0.25, 0.55, 0.8]);
+    const toChallenger = (gain) => (isIncumbent(m.a) ? -gain : gain);
+    return {
+      color: (r) => {
+        const value = toChallenger(r.gain);
+        const step = d3.bisectRight(b, Math.abs(value));
+        return step === 0 ? 'var(--oe-n)' : `var(--oe-${value > 0 ? 'c' : 'i'}${step})`;
+      },
+      key: [['var(--oe-c3)', `+${fmt(b[2])}+`], ['var(--oe-c2)', `+${fmt(b[1])}-${fmt(b[2])}`], ['var(--oe-c1)', `+${fmt(b[0])}-${fmt(b[1])}`],
+        ['var(--oe-n)', `Under ${fmt(b[0])}`],
+        ['var(--oe-i1)', `+${fmt(b[0])}-${fmt(b[1])}`], ['var(--oe-i2)', `+${fmt(b[1])}-${fmt(b[2])}`], ['var(--oe-i3)', `+${fmt(b[2])}+`]],
+    };
+  };
+  document.querySelectorAll('[data-map-race]').forEach((button) => {
+    button.addEventListener('click', () => dash.setParams({ map_race: button.dataset.mapRace }));
+  });
+  const mapMetric = () => (['left', 'net'].includes(dash.params().map_metric) ? dash.params().map_metric : 'lead');
+  document.querySelectorAll('[data-map-metric]').forEach((button) => {
+    button.addEventListener('click', () => dash.setParams({ map_metric: button.dataset.mapMetric }));
+  });
+  document.querySelectorAll('#map-hoods').forEach((box) => {
+    box.addEventListener('change', () => dash.setParams({ map_hoods: box.checked }));
+  });
+  dash.onData(() => {
+    document.querySelectorAll('[data-map-race]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mapRace === mapRace())));
+    document.querySelectorAll('[data-map-metric]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mapMetric === mapMetric())));
+  });
+  const mainArea = (r) => r.areas.split('; ')[0].replace(/ \d+%$/, '') || 'Unlabeled area';
+  const areaName = (r) => {
+    const parts = r.areas ? r.areas.split('; ').map((a) => a.replace(/ \d+%$/, '')) : [];
+    return parts.slice(0, 2).join(' / ') || 'Precinct ' + r.precinct;
+  };
+  const mapModel = () => {
+    const rows = mapRows();
+    const liveRows = live();
+    const fig = dash.data('byrace');
+    const file = dash.data('cvr');
+    if (!rows || !liveRows || fig.status !== 'ok' || file.status !== 'ok') return null;
+    const race = mapRace();
+    const id = 'OUSD' + race.slice(1);
+    const sc = scenario(liveRows, id);
+    const here = of(rows, 'precinct').filter((r) => r.race === race);
+    const pastTotal = d3.sum(here, (r) => r.cast22);
+    const finalVotes = sc.lead + sc.trail + sc.left;
+    const known = here.filter((r) => r.shown);
+    const overallB = d3.sum(known, (r) => r.votes_b) / d3.sum(known, (r) => r.total) * 100;
+    const areas = here.map((r) => {
+      const counted = r.shown ? r.total : 0;
+      const left = Math.max(0, Math.round(finalVotes * r.cast22 / pastTotal - counted));
+      const shareB = r.shown ? r.share_b : overallB;
+      const gain = Math.round(left * (100 - 2 * shareB) / 100);
+      return { ...r, left, gain, shareB, shareA: 100 - shareB };
+    });
+    const a = here[0].a;
+    const b = here[0].b;
+    const scans = of(file.data, 'scan').filter((r) => r.race_id === id).sort((x, y) => x.order - y.order);
+    const lateShare = scans[scans.length - 1].share;
+    const shift = lateShare - overallB;
+    const totalA = d3.sum(known, (r) => r.votes_a);
+    const totalB = d3.sum(known, (r) => r.votes_b);
+    const leadNow = totalA - totalB;
+    const totalLeft = d3.sum(areas, (r) => r.left);
+    const finishSame = leadNow + d3.sum(areas, (r) => r.gain);
+    const finishShift = leadNow + d3.sum(areas, (r) => Math.round(r.left * (100 - 2 * Math.min(100, Math.max(0, r.shareB + shift))) / 100));
+    const behind = leadNow >= 0 ? b : a;
+    const ahead = leadNow >= 0 ? a : b;
+    const shareOf = (r) => (leadNow >= 0 ? r.shareB : r.shareA);
+    const clamp = (v) => Math.min(100, Math.max(0, v));
+    const pace = totalLeft ? d3.sum(areas, (r) => r.left * shareOf(r)) / totalLeft : 0;
+    const needs = sc.trailNeeds;
+    const late = leadNow >= 0 ? lateShare : 100 - lateShare;
+    let low = -100;
+    let high = 100;
+    for (let i = 0; needs !== null && i < 40; i += 1) {
+      const mid = (low + high) / 2;
+      if (d3.sum(areas, (r) => r.left * clamp(shareOf(r) + mid)) < needs * totalLeft) low = mid;
+      else high = mid;
+    }
+    const lift = (low + high) / 2;
+    areas.forEach((r) => {
+      r.soFar = shareOf(r);
+      r.needed = clamp(shareOf(r) + lift);
+    });
+    return { race, id, a, b, sc, areas, totalLeft, leadNow, finishSame, finishShift, lateShare, behind, ahead, pace, needs, late };
+  };
+  const leadWords = (m, value) => (value >= 0 ? `${m.a} by ${fmt(value)}` : `${m.b} by ${fmt(-value)}`);
+  const splitWords = (needs) => {
+    if (needs === null) return 'No votes left';
+    if (needs > 100) return 'Out of reach';
+    return `${needs.toFixed(1)}%, about a ${Math.round(needs)}-${100 - Math.round(needs)} split`;
+  };
+  const pointWords = (value) => `${value > 0 ? '+' : ''}${value.toFixed(1)} points`;
+  const gainWords = (m, value) => (value === 0 ? 'Even' : value > 0 ? `${m.a} +${fmt(value)}` : `${m.b} +${fmt(-value)}`);
+  dash.draw('map-title', (n) => {
+    const m = mapModel();
+    if (!m) return dash0(n);
+    if (mapMetric() === 'lead') {
+      const shown = m.areas.filter((r) => r.shown);
+      const leader = m.leadNow >= 0 ? m.a : m.b;
+      const wins = shown.filter((r) => (m.leadNow >= 0 ? r.shareA > r.shareB : r.shareB > r.shareA)).length;
+      n.textContent = `${leader} leads by ${fmt(Math.abs(m.leadNow))} votes so far and is ahead in ${wins} of ${shown.length} areas.`;
+      return;
+    }
+    const top = [...m.areas].sort((x, y) => y.left - x.left).slice(0, 3);
+    const same = m.finishSame >= 0 ? m.a : m.b;
+    const shifted = m.finishShift >= 0 ? m.a : m.b;
+    const outlook = same === shifted ? `${same} stays ahead in both scenarios below` : `${same} finishes ahead if votes split as they have, but ${shifted} does if late mail keeps shifting`;
+    n.textContent = `About ${fmt(m.totalLeft)} votes are left, most of all around ${areaName(top[0])}. ${outlook}.`;
+  });
+  dash.draw('map-stats', (n) => {
+    const m = mapModel();
+    if (!m) return dash0(n);
+    const tile = (label, value, note) => {
+      const box = el('div');
+      box.append(el('span', 'oe-label', label), el('b', '', value), el('span', 'oe-label', note));
+      return box;
+    };
+    n.replaceChildren(
+      tile('Estimated votes left', fmt(m.totalLeft), `At ${m.sc.pct.toFixed(1)}% expected turnout`),
+      tile('Current lead', leadWords(m, m.leadNow), m.id === 'OUSD2' ? 'Two-way count' : 'Final ranked-choice round'),
+      tile('If votes split as so far', leadWords(m, m.finishSame), 'Estimated final margin'),
+      tile('If late mail keeps shifting', leadWords(m, m.finishShift), `${m.b} near ${m.lateShare.toFixed(1)}%, as in the latest mail batch`));
+  });
+  dash.draw('map-path-title', (n) => {
+    const m = mapModel();
+    if (!m) return dash0(n);
+    if (m.needs === null) n.textContent = `No votes are left for ${m.behind} to make up the gap at this turnout.`;
+    else if (m.needs > 100) n.textContent = `${m.behind} can't catch up at this turnout, even with every vote left.`;
+    else n.textContent = `${m.behind}'s path to a win: ${m.needs.toFixed(1)}% of the votes left.`;
+  });
+  dash.draw('map-path', (n) => {
+    const m = mapModel();
+    if (!m || m.needs === null) return n.replaceChildren();
+    const tile = (label, value, note) => {
+      const box = el('div');
+      box.append(el('span', 'oe-label', label), el('b', '', value), el('span', 'oe-label', note));
+      return box;
+    };
+    n.replaceChildren(
+      tile('Split needed', m.needs > 100 ? 'Out of reach' : `${Math.round(m.needs)}-${100 - Math.round(m.needs)}`, `${m.behind} to ${m.ahead}, of the votes left`),
+      tile('Votes to make up', fmt(m.sc.lead - m.sc.trail), `Across about ${fmt(m.sc.left)} votes left`),
+      tile('Shift from area splits', pointWords(m.needs - m.pace), `Splits so far would give ${m.behind} ${m.pace.toFixed(1)}%`),
+      tile('Shift from latest mail batch', pointWords(m.needs - m.late), `${m.behind} got ${m.late.toFixed(1)}% in that batch`));
+  });
+  dash.draw('map-path-turnout', (n) => {
+    const m = mapModel();
+    if (!m) return n.replaceChildren();
+    const rows = live();
+    const options = [['2022 rate', m.sc.lowPct], ['Midpoint', m.sc.basePct], ['2018-adjusted rate', m.sc.highPct]];
+    if (m.sc.changed) options.push(['Your setting', m.sc.pct]);
+    n.replaceChildren(...options.map(([name, pct]) => {
+      const sc = scenario(rows, m.id, pct);
+      const tr = el('tr');
+      [`${name} (${sc.pct.toFixed(1)}%)`, fmt(sc.left), splitWords(sc.trailNeeds)].forEach((t) => tr.append(el('td', '', t)));
+      return tr;
+    }));
+  });
+  dash.draw('map-key', (n) => {
+    const m = mapModel();
+    if (!m) return dash0(n);
+    const metric = mapMetric();
+    const bins = mapBins(m, metric);
+    const challenger = isIncumbent(m.a) ? m.b : m.a;
+    const incumbent = isIncumbent(m.a) ? m.a : m.b;
+    const ends = el('div', 'oe-map-key-ends');
+    if (metric === 'left') ends.append(el('span', '', 'Fewer votes left'), el('span', '', 'More votes left'));
+    else if (metric === 'net') ends.append(el('span', '', `Expected gain for ${challenger} (challenger)`), el('span', '', `${incumbent} (incumbent)`));
+    else ends.append(el('span', '', `Points ahead: ${challenger} (challenger)`), el('span', '', `${incumbent} (incumbent)`));
+    const row = el('div', 'oe-map-bins');
+    bins.key.forEach(([color, label]) => {
+      const cell = el('div');
+      const swatch = el('i');
+      swatch.style.background = color;
+      cell.append(swatch, el('span', '', label));
+      row.append(cell);
+    });
+    const ramp = el('div', 'oe-map-key');
+    ramp.append(ends, row);
+    n.replaceChildren(ramp);
+  });
+  dash.draw('map-view', (n) => {
+    const m = mapModel();
+    if (!m) return n.replaceChildren();
+    const race = m.race;
+    const rows = mapRows();
+    const here = m.areas;
+    const points = here.flatMap((r) => r.shape.flat(2));
+    const lat = d3.mean(points, (p) => p[1]);
+    const stretch = Math.cos(lat * Math.PI / 180);
+    const xs = d3.extent(points, (p) => p[0] * stretch);
+    const ys = d3.extent(points, (p) => p[1]);
+    const width = Math.max(n.clientWidth, 320);
+    const pad = 12;
+    const scale = (width - pad * 2) / (xs[1] - xs[0]);
+    const height = Math.min(620, (ys[1] - ys[0]) * scale + pad * 2);
+    const fit = Math.min(scale, (height - pad * 2) / (ys[1] - ys[0]));
+    const offsetX = (width - (xs[1] - xs[0]) * fit) / 2;
+    const px = (p) => [offsetX + (p[0] * stretch - xs[0]) * fit, pad + (ys[1] - p[1]) * fit];
+    const path = (shape) => shape.flat().map((ring) => 'M' + ring.map((p) => px(p).map((v) => v.toFixed(1)).join(',')).join('L') + 'Z').join('');
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`).attr('role', 'img').attr('aria-label', 'Map of district precincts');
+    const clipId = 'map-clip-' + race;
+    svg.append('clipPath').attr('id', clipId).append('path').attr('d', here.map((r) => path(r.shape)).join(''));
+    const tips = [];
+    const metric = mapMetric();
+    const bins = mapBins(m, metric);
+    here.forEach((r) => {
+      const shape = svg.append('path').attr('d', path(r.shape)).attr('fill-rule', 'evenodd').attr('stroke', 'var(--color-panel)').attr('stroke-width', 1).attr('fill', bins.color(r));
+      const resultTip = r.shown ? `${areaName(r)}: ${m.a} ${r.shareA.toFixed(0)}%, ${m.b} ${r.shareB.toFixed(0)}%, of ${fmt(r.total)} votes counted.` : `${areaName(r)}: too few votes to show.`;
+      tips.push({ node: shape.node(), text: metric === 'lead' ? resultTip : `${areaName(r)}: about ${fmt(r.left)} votes left. Expected gain: ${gainWords(m, r.gain)}. ${m.behind} needs ${r.needed.toFixed(0)}% here.` });
+    });
+    const placed = [];
+    if (dash.params().map_hoods !== false) {
+      const areaNames = new Set(here.flatMap((r) => r.areas ? r.areas.split('; ').map((a) => a.replace(/ \d+%$/, '')) : []));
+      const hoods = of(rows, 'hood').filter((h) => areaNames.has(h.key));
+      const group = svg.append('g').attr('clip-path', `url(#${clipId})`);
+      hoods.forEach((h) => group.append('path').attr('d', path(h.shape)).attr('fill', 'none').attr('stroke', 'var(--color-fg)').attr('stroke-width', 0.7).attr('stroke-opacity', 0.45).attr('pointer-events', 'none'));
+      hoods.filter((h) => { const [hx, hy] = px([h.x, h.y]); return hx > 40 && hx < width - 40 && hy > 14 && hy < height - 8; }).sort((a, b) => b.size - a.size).forEach((h) => {
+        const [hx, hy] = px([h.x, h.y]);
+        const half = h.name.length * 3.3;
+        if (placed.length >= 12 || hx - half < 2 || hx + half > width - 2 || placed.some((q) => Math.abs(q[0] - hx) < half + q[2] + 6 && Math.abs(q[1] - hy) < 18)) return;
+        placed.push([hx, hy, half]);
+        svg.append('text').attr('x', hx).attr('y', hy + 4).attr('text-anchor', 'middle').attr('pointer-events', 'none').text(h.name);
+      });
+    }
+    if (metric !== 'net') {
+      here.forEach((r) => {
+        if (metric === 'lead' && !r.shown) return;
+        const rings = r.shape.flat().map((ring) => ring.map(px));
+        const ring = rings.reduce((best, item) => (ringCenter(item).size > ringCenter(best).size ? item : best));
+        const { x: cx, y: cy } = ringCenter(ring);
+        const label = metric === 'left' ? fmt(r.left) : `+${Math.abs(r.shareA - r.shareB).toFixed(0)}`;
+        const half = label.length * 3.4;
+        const xs2 = d3.extent(ring, (p) => p[0]);
+        const ys2 = d3.extent(ring, (p) => p[1]);
+        if (xs2[1] - xs2[0] < half * 2 + 4 || ys2[1] - ys2[0] < 15) return;
+        if (placed.some((q) => Math.abs(q[0] - cx) < half + q[2] + 3 && Math.abs(q[1] - cy) < 14)) return;
+        placed.push([cx, cy, half]);
+        svg.append('text').attr('class', 'oe-map-count').attr('x', cx).attr('y', cy + 4).attr('text-anchor', 'middle').attr('pointer-events', 'none').text(label);
+      });
+    }
+    n.replaceChildren(svg.node());
+    n.style.minHeight = height + 'px';
+    const addTip = tipOn(n);
+    tips.forEach((t) => addTip(t.node, t.text));
+  });
+  dash.draw('map-table', (n) => {
+    const m = mapModel();
+    if (!m) return n.replaceChildren();
+    const top = [...m.areas].sort((x, y) => y.left - x.left).slice(0, 8);
+    n.replaceChildren(...top.map((r) => {
+      const tr = el('tr');
+      tr.dataset.key = r.key;
+      const soFar = r.shown ? r.soFar.toFixed(0) + '%' : 'Too few votes to show';
+      [areaName(r), fmt(r.left), gainWords(m, r.gain), soFar, r.needed.toFixed(0) + '%'].forEach((t) => tr.append(el('td', '', t)));
+      return tr;
+    }));
+  });
+
+  const cell = (v) => v === undefined || v === null ? '—' : v;
+  dash.draw('midterms', (n) => {
+    const g = dash.data('midterms');
+    if (g.status !== 'ok') return n.replaceChildren();
+    n.replaceChildren(...g.data.map((r) => {
+      const tr = el('tr'); tr.dataset.key = r.key;
+      [r.key, fmt(r.returned), fmt(r.issued), r.now.toFixed(1) + '%', fmt(r.returned_2022), fmt(r.issued_2022), cell(r.rate_2022) + '%', fmt(r.returned_2018), fmt(r.issued_2018), cell(r.rate_2018) + '%', fmt(r.to_2022)].forEach((t) => tr.append(el('td', '', t)));
+      return tr;
+    }));
+  });
+  dash.draw('races', (n) => {
+    const g = dash.data('byrace');
+    if (g.status !== 'ok') return n.replaceChildren();
+    const ordered = [...g.data].sort((x, y) => y.key.startsWith('OUSD') - x.key.startsWith('OUSD'));
+    n.replaceChildren(...ordered.map((r) => {
+      const tr = el('tr'); tr.dataset.key = r.key;
+      [r.race, fmt(r.votes_total), r.reporting, fmt(r.issued), fmt(r.returned), fmt(r.outstanding), r.returned_pct.toFixed(1) + '%', r.rate_2022 + '%', r.rate_2018 + '%', fmt(r.votes_2022), fmt(r.expected_low), fmt(r.expected_high), fmt(isOusd(r.key) ? scenario(live(), r.key).expected : r.expected_mid), r.win_at === null ? '—' : fmt(isOusd(r.key) ? scenario(live(), r.key).winAt : r.win_at), fmt(r.leader_votes), r.to_win === null ? '—' : fmt(isOusd(r.key) ? Math.max(0, scenario(live(), r.key).winAt - r.leader_votes) : r.to_win)].forEach((t) => tr.append(el('td', '', t)));
+      return tr;
+    }));
+  });
+
+  dash.draw('party', (n) => {
+    const rows = live();
+    if (!rows) return dash0(n);
+    const list = of(rows, 'party').filter((p) => p.issued >= 1000).sort((a, b) => b.issued - a.issued);
+    n.replaceChildren(...list.map((p) => {
+      const row = el('div', 'oe-row');
+      row.append(el('span', '', p.party), el('span', '', fmt(p.returned) + ' of ' + fmt(p.issued) + ' · ' + p.returned_pct.toFixed(1) + '%'), bar([[p.returned_pct, dash.colors[0]]]));
+      return row;
+    }));
+  });
+
+  dash.draw('trend', (n) => {
+    const rows = live();
+    if (!rows) return n.replaceChildren();
+    const pts = of(rows, 'snapshot').filter((p) => p.oak_returned).map((p) => ({ t: new Date(p.at), v: p.oak_returned }));
+    if (pts.length < 2) return n.replaceChildren(el('p', 'oe-sub', 'The line starts once the county posts a second count. The county publishes no earlier history.'));
+    const w = Math.max(n.clientWidth, 260), h = 170, m = { t: 10, r: 36, b: 22, l: 52 };
+    const x = d3.scaleUtc(d3.extent(pts, (p) => p.t), [m.l, w - m.r]);
+    const y = d3.scaleLinear([d3.min(pts, (p) => p.v) * 0.98, d3.max(pts, (p) => p.v) * 1.02], [h - m.b, m.t]).nice();
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`);
+    svg.append('g').attr('transform', `translate(0,${h - m.b})`).call(d3.axisBottom(x).ticks(4).tickFormat((d) => d.toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', minute: '2-digit' }))).attr('font-size', null).attr('font-family', null).attr('color', 'var(--color-fg-muted)');
+    svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d3.format(','))).attr('font-size', null).attr('font-family', null).attr('color', 'var(--color-fg-muted)');
+    svg.append('path').datum(pts).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('d', d3.line().x((p) => x(p.t)).y((p) => y(p.v)));
+    n.replaceChildren(svg.node());
+  });
+</script>
+
+<p id="site-foot">Independent tracker, not an official county site. Results are unofficial until certified. Source: Alameda County Registrar of Voters.</p>
+</div>
+</body>
+</html>
