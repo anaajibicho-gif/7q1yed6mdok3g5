@@ -248,7 +248,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     <p class="oe-sub">Ballot figures cover each race's voting area. The county doesn't report ballots cast by race, so votes counted is the sum of votes for all choices. Measure RTM is shown for all of Alameda County, since the county doesn't split it by city.</p>
     <div class="oe-scroll">
       <table data-source="byrace" data-row-key="key">
-        <thead><tr><th data-field="race">Race</th><th data-field="votes_total">Votes counted</th><th data-field="reporting">Precincts</th><th data-field="issued">Mail issued</th><th data-field="returned">Returned</th><th data-field="outstanding">Outstanding</th><th data-field="returned_pct">Returned now</th><th data-field="rate_2022">2022 final</th><th data-field="rate_2018">2018 final</th><th data-field="votes_2022">2022 votes</th><th data-field="expected_low">Likely votes, low</th><th data-field="expected_high">Likely votes, high</th><th data-field="expected_mid">Estimated votes</th><th data-field="win_at">Estimated to win</th><th data-field="leader_votes">Yes or leader now</th><th data-field="to_win">Votes to go</th></tr></thead>
+        <thead><tr><th data-field="race">Race</th><th data-field="votes_total">Votes counted</th><th data-field="reporting">Precincts</th><th data-field="issued">Mail issued</th><th data-field="returned">Returned</th><th data-field="outstanding">Outstanding</th><th data-field="returned_pct">Returned now</th><th data-field="rate_2022">2022 final</th><th data-field="rate_2018">2018 final</th><th data-field="votes_2022">2022 votes</th><th data-field="expected_low">Likely votes, low</th><th data-field="expected_high">Likely votes, high</th><th data-field="expected_mid">Estimated votes</th><th data-field="win_at">Estimated to win</th><th data-field="leader_votes">Yes or leader now</th><th data-field="to_win">Votes to go</th><th data-field="trailer">Behind now</th><th data-field="trailer_votes">Their votes</th><th data-field="trailer_to_win">They need</th><th data-field="trail_share">Share of votes left</th></tr></thead>
         <tbody data-draw="races"></tbody>
       </table>
     </div>
@@ -319,6 +319,9 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         const finalRound = first.length > 2 && rcv.length ? d3.sum(rcv, (x) => x.votes) / r.votes_total : 1;
         if (mid < r.votes_total) { mid = r.votes_total; low = Math.min(low, mid); high = Math.max(high, mid); }
         const win_at = decided ? Math.floor(mid * finalRound / 2) + 1 : null;
+        const [top, behind] = [...counted].sort((x, y) => y.votes - x.votes);
+        const left = Math.max(0, Math.round(mid * finalRound - d3.sum(counted, (x) => x.votes)));
+        const trail_share = win_at === null || !behind ? null : left > 0 ? (left + top.votes - behind.votes) / 2 / left * 100 : Infinity;
         return { key: r.key, race: r.race, priority: r.priority, votes_total: r.votes_total,
           reporting: r.precincts_reported + ' of ' + r.precincts_total,
           issued: a.issued, returned: a.returned, outstanding: a.outstanding, returned_pct: a.returned_pct,
@@ -326,6 +329,8 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
           expected_low: low, expected_high: high, expected_mid: mid, win_at,
           leader: leader && leader.votes ? leader.choice : null, leader_votes: leader ? leader.votes : 0,
           to_win: win_at === null ? null : Math.max(0, win_at - (leader ? leader.votes : 0)),
+          trailer: behind ? behind.choice : null, trailer_votes: behind ? behind.votes : 0, votes_left: left,
+          trailer_to_win: win_at === null || !behind ? null : Math.max(0, win_at - behind.votes), trail_share,
           unopposed: first.length === 1 };
       });
     },
@@ -1259,13 +1264,21 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       return tr;
     }));
   });
+  const titleCase = (name) => (name === name.toUpperCase() ? name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : name);
+  const trailCells = (r) => {
+    if (r.trailer_to_win === null) return [r.trailer ? titleCase(r.trailer) : '—', r.trailer ? fmt(r.trailer_votes) : '—', '—', '—'];
+    const sc = isOusd(r.key) ? scenario(live(), r.key) : null;
+    const need = sc ? Math.max(0, sc.winAt - sc.trail) : r.trailer_to_win;
+    const share = sc ? (sc.trailNeeds === null ? Infinity : sc.trailNeeds) : r.trail_share;
+    return [titleCase(r.trailer), fmt(r.trailer_votes), fmt(need), share > 100 ? 'Out of reach' : share.toFixed(1) + '%'];
+  };
   dash.draw('races', (n) => {
     const g = dash.data('byrace');
     if (g.status !== 'ok') return n.replaceChildren();
     const ordered = [...g.data].sort((x, y) => y.key.startsWith('OUSD') - x.key.startsWith('OUSD'));
     n.replaceChildren(...ordered.map((r) => {
       const tr = el('tr'); tr.dataset.key = r.key;
-      [r.race, fmt(r.votes_total), r.reporting, fmt(r.issued), fmt(r.returned), fmt(r.outstanding), r.returned_pct.toFixed(1) + '%', r.rate_2022 + '%', r.rate_2018 + '%', fmt(r.votes_2022), fmt(r.expected_low), fmt(r.expected_high), fmt(isOusd(r.key) ? scenario(live(), r.key).expected : r.expected_mid), r.win_at === null ? '—' : fmt(isOusd(r.key) ? scenario(live(), r.key).winAt : r.win_at), fmt(r.leader_votes), r.to_win === null ? '—' : fmt(isOusd(r.key) ? Math.max(0, scenario(live(), r.key).winAt - r.leader_votes) : r.to_win)].forEach((t) => tr.append(el('td', '', t)));
+      [r.race, fmt(r.votes_total), r.reporting, fmt(r.issued), fmt(r.returned), fmt(r.outstanding), r.returned_pct.toFixed(1) + '%', r.rate_2022 + '%', r.rate_2018 + '%', fmt(r.votes_2022), fmt(r.expected_low), fmt(r.expected_high), fmt(isOusd(r.key) ? scenario(live(), r.key).expected : r.expected_mid), r.win_at === null ? '—' : fmt(isOusd(r.key) ? scenario(live(), r.key).winAt : r.win_at), fmt(r.leader_votes), r.to_win === null ? '—' : fmt(isOusd(r.key) ? Math.max(0, scenario(live(), r.key).winAt - r.leader_votes) : r.to_win), ...trailCells(r)].forEach((t) => tr.append(el('td', '', t)));
       return tr;
     }));
   });
