@@ -39,7 +39,8 @@ p { margin: 0; max-width: 68ch }
 .races button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px }
-.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 28px }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px 32px }
+.ctl-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between }
 .ctl { display: grid; gap: 6px; min-width: 0 }
 .ctl label { font-weight: 600 }
 .ctl .row { display: flex; align-items: center; gap: 12px }
@@ -94,6 +95,7 @@ td input.set { border-color: var(--focus); border-width: 2px }
   </div>
 
   <section class="panel controls" aria-label="Assumptions">
+    <div class="ctl-head"><h2>Assumptions</h2><button type="button" class="link" id="reset-all">Reset: votes left split like so far</button></div>
     <div class="ctl">
       <label for="x" id="x-label">Where the leader is ahead</label>
       <div class="row"><button type="button" class="step" data-for="x" data-d="-1" aria-label="Less">−</button><input type="range" id="x" min="-10" max="15" step="1"><button type="button" class="step" data-for="x" data-d="1" aria-label="More">+</button></div><output id="x-out" class="num"></output>
@@ -212,10 +214,12 @@ function render() {
 
   const sorted = [...r.rows].sort((a, b) => b.left - a.left);
   const counted = r.rows.reduce((t, x) => t + (x.p.shown ? x.p.a + x.p.b : 0), 0);
-  const big = sorted[0], bigName = big.p.area.split(';')[0].replace(/\s\d+%$/, '');
+  const gap = (x) => x.left / state.left - (x.p.shown ? (x.p.a + x.p.b) / counted : 0);
+  const big = state.spread === 't22' ? [...r.rows].sort((a, b) => gap(b) - gap(a))[0] : sorted[0];
+  const bigName = big.p.area.split(';')[0].replace(/\s\d+%$/, '');
   const bigNow = big.p.shown ? (big.p.a + big.p.b) / counted * 100 : 0, bigLeft = big.left / state.left * 100;
   $('spread-help').textContent = state.spread === 't22'
-    ? `Assumes each precinct ends up with the same share of the district's ballots it cast in 2022. Precincts that have counted less than usual so far get more of the votes left. Example: ${bigName} (precinct ${big.p.p}) has ${bigNow.toFixed(0)}% of the votes counted so far but gets ${bigLeft.toFixed(0)}% of the votes left.`
+    ? `Assumes each precinct ends up with the same share of the district's ballots it cast in 2022. Precincts that have counted fewer votes than usual so far get more of the votes left. Biggest example: ${bigName} (precinct ${big.p.p}) has ${bigNow.toFixed(0)}% of the votes counted so far but gets ${bigLeft.toFixed(0)}% of the votes left.`
     : `Assumes every precinct is equally far along in counting, so each one's votes left match its share of the votes counted so far. Example: ${bigName} (precinct ${big.p.p}) has ${bigNow.toFixed(0)}% of the votes counted so far, so it also gets ${bigLeft.toFixed(0)}% of the votes left.`;
   $('rows').innerHTML = sorted.map((x) => {
     const key = state.race + '|' + x.p.p;
@@ -249,6 +253,11 @@ $('rows').addEventListener('change', (e) => {
   const k = e.target.dataset.key; if (!k) return;
   const v = e.target.value.trim().replace('−', '-');
   if (v === '' || isNaN(Number(v))) delete state.overrides[k]; else state.overrides[k] = Number(v);
+  render();
+});
+$('reset-all').addEventListener('click', () => {
+  state.x = 0; state.y = 0; state.left = DATA[state.race].meta.left; state.spread = 't22';
+  Object.keys(state.overrides).forEach((k) => { if (k.startsWith(state.race + '|')) delete state.overrides[k]; });
   render();
 });
 $('reset').addEventListener('click', () => {
