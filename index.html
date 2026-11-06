@@ -218,7 +218,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       <article class="oe-card" id="expected">
         <h3>Measure EE: estimated votes and win number</h3>
         <div data-draw="expected" data-source="byrace">—</div>
-        <p class="oe-sub">An estimate, not a forecast. The range runs from Oakland's 2022 vote rate to that rate raised by how much higher countywide turnout was in 2018 than in 2022. The estimate is the midpoint, and the win number is one vote more than half of it.</p>
+        <p class="oe-sub" data-draw="expected-basis" data-source="live">An estimate, not a forecast.</p>
       </article>
     </div>
     <article class="oe-card" id="midterms">
@@ -259,7 +259,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     <div class="oe-grid" data-draw="others" data-source="live byrace">—</div>
   </section>
 
-  <p class="oe-note">Sources: Alameda County Registrar of Voters (results and ballot data) and the California Secretary of State's Statement of Vote (2018 and 2022 turnout).</p>
+  <p class="oe-note">Sources: Alameda County Registrar of Voters (results, ballot data and Estimated Unprocessed Ballots Report) and the California Secretary of State's Statement of Vote (2018 and 2022 turnout).</p>
 </div>
 <script>
   const fmt = d3.format(',');
@@ -285,24 +285,39 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 
   dash.calc('byrace', {
     title: 'Race ballots vs past midterms',
-    description: 'Each race joined to its area: likely votes scale the 2022 vote rate to mail ballots issued now, up to the county 2018-to-2022 turnout ratio; the estimate is the midpoint, and the win number is one more than half of it.',
+    description: 'Each race joined to its area. With the county unprocessed-ballot report: final county ballots (processed plus unprocessed) shared out by each area\'s returned mail, times the race\'s 2022 share of ballots cast; low drops the Other category, high adds as much late mail again. Without it: the 2022 vote rate scaled to mail issued now, up to the 2018-to-2022 turnout ratio. The win number is one more than half the estimate.',
     inputs: ['live', 'comparison'],
     fn: (live, comparison) => {
       const c18 = comparison.find((r) => r.key === '2018').turnout_pct;
-      const c22 = comparison.find((r) => r.key === '2022').turnout_pct;
+      const c22 = comparison.find((r) => r.key === '2022');
+      const u = live.find((r) => r.kind === 'unprocessed');
+      const county = live.find((x) => x.kind === 'returns' && x.key === 'COUNTY') || {};
+      const mail22 = (comparison.find((x) => x.kind === 'area' && x.key === 'COUNTY') || {}).returned_2022;
       return live.filter((r) => r.kind === 'race').map((r) => {
         const a = live.find((x) => x.kind === 'returns' && x.key === r.area) || {};
         const h = comparison.find((x) => x.kind === 'area' && x.key === r.area) || {};
         const c = comparison.find((x) => x.kind === 'race' && x.key === r.key) || {};
-        const low = Math.round(c.votes_2022 / h.issued_2022 * a.issued);
-        const high = Math.round(low * c18 / c22);
-        const mid = Math.round((low + high) / 2);
+        let low; let high; let mid;
+        if (u && county.returned) {
+          // votes per ballot cast in 2022; 2022 area figures are mail only, so scale by the county's in-person share
+          const perBallot = c.votes_2022 / (h.returned_2022 * c22.total / mail22);
+          const toVotes = (ballots) => Math.round(ballots * a.returned / county.returned * perBallot);
+          const final = u.processed + u.total;
+          low = toVotes(final - u.other);
+          mid = toVotes(final);
+          high = toVotes(final + u.mail_after);
+        } else {
+          low = Math.round(c.votes_2022 / h.issued_2022 * a.issued);
+          high = Math.round(low * c18 / c22.turnout_pct);
+          mid = Math.round((low + high) / 2);
+        }
         const first = live.filter((x) => x.kind === 'choice' && x.race_id === r.key);
         const rcv = live.filter((x) => x.kind === 'rcv' && x.race_id === r.key);
         const counted = (rcv.length ? rcv : first);
         const leader = r.group === 'Measures' ? counted.find((x) => x.choice === 'Yes') : [...counted].sort((x, y) => y.votes - x.votes)[0];
         const decided = first.length > 1 && r.key !== 'RTM';
         const finalRound = first.length > 2 && rcv.length ? d3.sum(rcv, (x) => x.votes) / r.votes_total : 1;
+        if (mid < r.votes_total) { mid = r.votes_total; low = Math.min(low, mid); high = Math.max(high, mid); }
         const win_at = decided ? Math.floor(mid * finalRound / 2) + 1 : null;
         return { key: r.key, race: r.race, priority: r.priority, votes_total: r.votes_total,
           reporting: r.precincts_reported + ' of ' + r.precincts_total,
@@ -358,6 +373,14 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     return a ? el('p', 'oe-sub', a.area + ': ' + fmt(a.returned) + ' mail ballots returned, ' + fmt(a.outstanding) + ' outstanding (' + a.returned_pct.toFixed(1) + '%).') : el('span');
   };
   let focusAfterDraw = null;
+  const countyReport = (rows) => (rows || []).find((r) => r.kind === 'unprocessed');
+  const presetNames = (rows) => (countyReport(rows) ? ['Fewer ballots', 'County estimate', 'More late mail'] : ['2022 rate', 'Midpoint', '2018-adjusted rate']);
+  const basisWords = (rows) => {
+    const u = countyReport(rows);
+    if (!u) return 'An estimate, not a forecast. The range runs from Oakland\'s 2022 vote rate to that rate raised by how much higher countywide turnout was in 2018 than in 2022. The estimate is the midpoint, and the win number is one vote more than half of it.';
+    return `An estimate, not a forecast. The county reports ${fmt(u.processed)} ballots processed and about ${fmt(u.total)} still to process (as of ${u.as_of}), so about ${fmt(u.processed + u.total)} in all. Each area gets its share by returned mail, and each race keeps its 2022 share of ballots cast. The low end sets aside the ${fmt(u.other)} ballots the county lists as damaged or under review; the high end adds another ${fmt(u.mail_after)} late mail ballots, as many as have arrived since Election Day. The win number is one vote more than half the estimate.`;
+  };
+  text('expected-basis', basisWords);
   const isOusd = (id) => id === 'OUSD2' || id === 'OUSD4' || id === 'OUSD6';
   const isIncumbent = (name) => /brouhard|hutchinson|bachelor/i.test(name);
   const candColor = (name) => (isIncumbent(name) ? 'var(--oe-incumbent)' : 'var(--oe-challenger)');
@@ -732,7 +755,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       const paint = (sc) => {
         output.textContent = sc.pct.toFixed(1) + '%';
         slider.setAttribute('aria-valuetext', sc.pct.toFixed(1) + ' percent');
-        explain.textContent = `${sc.changed ? 'Your scenario' : 'Starting assumption'}: votes in this race equal ${sc.pct.toFixed(1)}% of the ${fmt(sc.issued)} ballots issued, or about ${fmt(sc.expected)} first-choice votes. The start is ${sc.basePct.toFixed(1)}%, midway between the 2022 rate (${sc.lowPct.toFixed(1)}%) and that rate raised for 2018's higher county turnout (${sc.highPct.toFixed(1)}%). So far, ${sc.countedPct.toFixed(1)}% is counted and ${sc.returnedPct.toFixed(1)}% of mail ballots were logged as returned, though returned ballots can be blank in this race.`;
+        explain.textContent = `${sc.changed ? 'Your scenario' : 'Starting assumption'}: votes in this race equal ${sc.pct.toFixed(1)}% of the ${fmt(sc.issued)} ballots issued, or about ${fmt(sc.expected)} first-choice votes. ${countyReport(rows) ? `The start is ${sc.basePct.toFixed(1)}%, from the county's count of ballots still to process (as of ${countyReport(rows).as_of}), with a range of ${sc.lowPct.toFixed(1)}% to ${sc.highPct.toFixed(1)}%.` : `The start is ${sc.basePct.toFixed(1)}%, midway between the 2022 rate (${sc.lowPct.toFixed(1)}%) and that rate raised for 2018's higher county turnout (${sc.highPct.toFixed(1)}%).`} So far, ${sc.countedPct.toFixed(1)}% is counted and ${sc.returnedPct.toFixed(1)}% of mail ballots were logged as returned, though returned ballots can be blank in this race.`;
         winTile.value.textContent = fmt(sc.winAt);
         winTile.note.textContent = sc.changed ? `Starting estimate: ${fmt(scenario(rows, id, sc.basePct).winAt)}` : 'Half of expected votes, plus one';
         leadTile.value.textContent = fmt(Math.max(0, sc.winAt - sc.lead));
@@ -756,7 +779,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       };
       slider.addEventListener('input', () => paint(scenario(rows, id, Number(slider.value))));
       slider.addEventListener('change', () => choose(Number(slider.value), sliderId));
-      [['2022 rate', plan.lowPct], ['Midpoint', plan.basePct], ['2018-adjusted rate', plan.highPct]].forEach(([name, value], i) => {
+      presetNames(rows).map((name, i) => [name, [plan.lowPct, plan.basePct, plan.highPct][i]]).forEach(([name, value], i) => {
         const button = el('button', '', `${name} (${value.toFixed(1)}%)`);
         button.type = 'button';
         button.id = `${sliderId}-p${i}`;
@@ -1116,7 +1139,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const m = mapModel();
     if (!m) return n.replaceChildren();
     const rows = live();
-    const options = [['2022 rate', m.sc.lowPct], ['Midpoint', m.sc.basePct], ['2018-adjusted rate', m.sc.highPct]];
+    const options = presetNames(rows).map((name, i) => [name, [m.sc.lowPct, m.sc.basePct, m.sc.highPct][i]]);
     if (m.sc.changed) options.push(['Your setting', m.sc.pct]);
     n.replaceChildren(...options.map(([name, pct]) => {
       const sc = scenario(rows, m.id, pct);
