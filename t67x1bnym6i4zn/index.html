@@ -43,8 +43,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .ctl { display: grid; gap: 6px; min-width: 0 }
 .ctl label { font-weight: 600 }
 .ctl .row { display: flex; align-items: center; gap: 12px }
-.ctl input[type=range] { flex: 1; min-width: 0; accent-color: var(--fg) }
-.ctl output { min-width: 5.5em; text-align: right; font-weight: 500 }
+.ctl input[type=range] { flex: 1; min-width: 0; height: 32px; margin: 0; accent-color: var(--fg); touch-action: pan-y; cursor: pointer }
+.ctl output { font-weight: 500; font-size: 1.05rem }
+.step { flex: none; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 600 1.2rem/1 var(--sans); cursor: pointer; touch-action: manipulation }
+.step:active { background: var(--line) }
 .ctl small { color: var(--muted) }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
 .seg button { font: inherit; padding: 5px 12px; border: 0; background: transparent; color: var(--fg); cursor: pointer }
@@ -94,17 +96,17 @@ td input.set { border-color: var(--focus); border-width: 2px }
   <section class="panel controls" aria-label="Assumptions">
     <div class="ctl">
       <label for="x" id="x-label">Where the leader is ahead</label>
-      <div class="row"><input type="range" id="x" min="-10" max="20" step="0.5"><output id="x-out" class="num"></output></div>
+      <div class="row"><button type="button" class="step" data-for="x" data-d="-1" aria-label="Less">−</button><input type="range" id="x" min="-10" max="15" step="1"><button type="button" class="step" data-for="x" data-d="1" aria-label="More">+</button></div><output id="x-out" class="num"></output>
       <small id="x-help"></small>
     </div>
     <div class="ctl">
       <label for="y" id="y-label">Where the trailing candidate is ahead</label>
-      <div class="row"><input type="range" id="y" min="-10" max="20" step="0.5"><output id="y-out" class="num"></output></div>
+      <div class="row"><button type="button" class="step" data-for="y" data-d="-1" aria-label="Less">−</button><input type="range" id="y" min="-10" max="15" step="1"><button type="button" class="step" data-for="y" data-d="1" aria-label="More">+</button></div><output id="y-out" class="num"></output>
       <small id="y-help"></small>
     </div>
     <div class="ctl">
       <label for="left">Votes left to count (final round)</label>
-      <div class="row"><input type="range" id="left" min="2000" max="18000" step="50"><output id="left-out" class="num"></output></div>
+      <div class="row"><button type="button" class="step" data-for="left" data-d="-250" aria-label="Fewer">−</button><input type="range" id="left" min="4000" max="16000" step="250"><button type="button" class="step" data-for="left" data-d="250" aria-label="More">+</button></div><output id="left-out" class="num"></output>
       <small id="left-help"></small>
     </div>
     <div class="ctl">
@@ -113,7 +115,7 @@ td input.set { border-color: var(--focus); border-width: 2px }
         <button type="button" id="spread-t22" data-spread="t22">Like 2022 turnout</button>
         <button type="button" id="spread-n" data-spread="n">Like votes so far</button>
       </div>
-      <small>2022 turnout gives more of the remaining votes to precincts that are behind their usual turnout. "Like votes so far" spreads them in proportion to what each precinct has already counted.</small>
+      <small id="spread-help"></small>
     </div>
   </section>
 
@@ -182,7 +184,7 @@ function render() {
   const r = model(), m = r.m, A = m.a, B = m.b;
   document.querySelectorAll('[data-race]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.race === state.race));
   document.querySelectorAll('[data-spread]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.spread === state.spread));
-  $('x').value = state.x; $('y').value = state.y; $('left').value = state.left;
+  ['x', 'y', 'left'].forEach((id) => { if (document.activeElement !== $(id)) $(id).value = state[id]; });
   const word = (v) => v === 0 ? 'same as so far' : (v > 0 ? `${v} pts worse` : `${-v} pts better`);
   $('x-out').textContent = word(state.x); $('y-out').textContent = word(state.y);
   $('left-out').textContent = fmt(state.left);
@@ -209,6 +211,12 @@ function render() {
   ].join('');
 
   const sorted = [...r.rows].sort((a, b) => b.left - a.left);
+  const counted = r.rows.reduce((t, x) => t + (x.p.shown ? x.p.a + x.p.b : 0), 0);
+  const big = sorted[0], bigName = big.p.area.split(';')[0].replace(/\s\d+%$/, '');
+  const bigNow = big.p.shown ? (big.p.a + big.p.b) / counted * 100 : 0, bigLeft = big.left / state.left * 100;
+  $('spread-help').textContent = state.spread === 't22'
+    ? `Assumes each precinct ends up with the same share of the district's ballots it cast in 2022. Precincts that have counted less than usual so far get more of the votes left. Example: ${bigName} (precinct ${big.p.p}) has ${bigNow.toFixed(0)}% of the votes counted so far but gets ${bigLeft.toFixed(0)}% of the votes left.`
+    : `Assumes every precinct is equally far along in counting, so each one's votes left match its share of the votes counted so far. Example: ${bigName} (precinct ${big.p.p}) has ${bigNow.toFixed(0)}% of the votes counted so far, so it also gets ${bigLeft.toFixed(0)}% of the votes left.`;
   $('rows').innerHTML = sorted.map((x) => {
     const key = state.race + '|' + x.p.p;
     const name = x.p.area.split(';')[0].replace(/\s\d+%$/, '');
@@ -230,7 +238,13 @@ function setRace(k) {
 }
 document.querySelectorAll('[data-race]').forEach((b) => b.addEventListener('click', () => setRace(b.dataset.race)));
 document.querySelectorAll('[data-spread]').forEach((b) => b.addEventListener('click', () => { state.spread = b.dataset.spread; render(); }));
-['x', 'y', 'left'].forEach((id) => $(id).addEventListener('input', (e) => { state[id] = Number(e.target.value); render(); }));
+let frame = 0;
+const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; render(); }); };
+['x', 'y', 'left'].forEach((id) => $(id).addEventListener('input', (e) => { state[id] = Number(e.target.value); schedule(); }));
+document.querySelectorAll('.step').forEach((b) => b.addEventListener('click', () => {
+  const el = $(b.dataset.for), v = Math.min(Number(el.max), Math.max(Number(el.min), state[b.dataset.for] + Number(b.dataset.d)));
+  state[b.dataset.for] = v; render();
+}));
 $('rows').addEventListener('change', (e) => {
   const k = e.target.dataset.key; if (!k) return;
   const v = e.target.value.trim().replace('−', '-');
