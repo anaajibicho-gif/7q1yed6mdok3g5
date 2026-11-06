@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} [hidden]{display:none!important}</style>
+</head>
+<body>
+<title>OUSD Late-Vote What-If</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;750&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of controls over a live result line, then a precinct-by-precinct ledger with a diverging bar per row. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #17202b; --muted: #5b6676; --line: #dde2e9;
+  --chal: #1d7a4c; --chal-soft: #d8eee2; --inc: #b3373b; --inc-soft: #f6dcdc; --focus: #2f5fa8;
+  --sans: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11161d; --panel: #18202a; --fg: #e8edf3; --muted: #9aa6b5; --line: #2a3442;
+  --chal: #4cc489; --chal-soft: #1b3a2b; --inc: #f07a7d; --inc-soft: #43242a; --focus: #7aa7ff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11161d; --panel: #18202a; --fg: #e8edf3; --muted: #9aa6b5; --line: #2a3442;
+  --chal: #4cc489; --chal-soft: #1b3a2b; --inc: #f07a7d; --inc-soft: #43242a; --focus: #7aa7ff; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px }
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 20px }
+h1 { font-size: 1.6rem; font-weight: 750; margin: 0; text-wrap: balance; letter-spacing: -0.01em }
+h2 { font-size: 1rem; font-weight: 750; margin: 0 }
+p { margin: 0; max-width: 68ch }
+.sub { color: var(--muted) }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.races { display: flex; flex-wrap: wrap; gap: 8px }
+.races button { font: inherit; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer }
+.races button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px 28px }
+.ctl { display: grid; gap: 6px; min-width: 0 }
+.ctl label { font-weight: 600 }
+.ctl .row { display: flex; align-items: center; gap: 12px }
+.ctl input[type=range] { flex: 1; min-width: 0; accent-color: var(--fg) }
+.ctl output { min-width: 5.5em; text-align: right; font-weight: 500 }
+.ctl small { color: var(--muted) }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.seg button { font: inherit; padding: 5px 12px; border: 0; background: transparent; color: var(--fg); cursor: pointer }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg) }
+.result { display: grid; gap: 14px }
+.verdict { font-size: 1.45rem; font-weight: 750; text-wrap: balance }
+.verdict .who { padding: 0 6px; border-radius: 4px }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px }
+.stat { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px }
+.stat .k { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted) }
+.stat .v { font-size: 1.15rem; font-weight: 500 }
+.stat .n { font-size: 0.82rem; color: var(--muted) }
+.track { position: relative; height: 22px; border-radius: 4px; overflow: hidden; display: flex }
+.track span { height: 100% }
+.track .mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--fg) }
+.scroll { overflow-x: auto }
+table { width: 100%; border-collapse: collapse; min-width: 720px }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap }
+th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600 }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 210px }
+td.place b { display: block; font-weight: 600 }
+td.place span { color: var(--muted); font-size: 0.8rem }
+td input { width: 4.6em; font: inherit; font-family: var(--mono); padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--fg); text-align: right }
+td input.set { border-color: var(--focus); border-width: 2px }
+.pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px }
+.bar { width: 110px; position: relative; height: 14px }
+.bar i { position: absolute; top: 0; height: 100% }
+.bar .axis { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted) }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between }
+.link { font: inherit; background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; color: var(--fg); cursor: pointer }
+.note { font-size: 0.85rem; color: var(--muted) }
+@media (max-width: 520px) { .verdict { font-size: 1.2rem } }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>OUSD late-vote what-if</h1>
+    <p class="sub">Set how much worse the leader does in the uncounted votes, separately where they're ahead and where they're behind, and see where each race ends. Precinct counts are final-round votes from the county's cast vote record after election night (Nov 4, 2:07 AM). Votes left start from the county's ballots-received counts (Nov 6), raised 12% to match its unprocessed ballot report (Nov 5), which also lists provisional, same-day registration and damaged ballots.</p>
+  </header>
+
+  <div class="races" role="group" aria-label="Race">
+    <button type="button" id="race-D2" data-race="D2">District 2</button>
+    <button type="button" id="race-D4" data-race="D4">District 4</button>
+    <button type="button" id="race-D6" data-race="D6">District 6</button>
+  </div>
+
+  <section class="panel controls" aria-label="Assumptions">
+    <div class="ctl">
+      <label for="x" id="x-label">Where the leader is ahead</label>
+      <div class="row"><input type="range" id="x" min="-10" max="20" step="0.5"><output id="x-out" class="num"></output></div>
+      <small id="x-help"></small>
+    </div>
+    <div class="ctl">
+      <label for="y" id="y-label">Where the trailing candidate is ahead</label>
+      <div class="row"><input type="range" id="y" min="-10" max="20" step="0.5"><output id="y-out" class="num"></output></div>
+      <small id="y-help"></small>
+    </div>
+    <div class="ctl">
+      <label for="left">Votes left to count (final round)</label>
+      <div class="row"><input type="range" id="left" min="2000" max="18000" step="50"><output id="left-out" class="num"></output></div>
+      <small id="left-help"></small>
+    </div>
+    <div class="ctl">
+      <span style="font-weight:600" id="spread-label">Where the votes left are</span>
+      <div class="seg" role="group" aria-labelledby="spread-label">
+        <button type="button" id="spread-t22" data-spread="t22">Like 2022 turnout</button>
+        <button type="button" id="spread-n" data-spread="n">Like votes so far</button>
+      </div>
+      <small>2022 turnout gives more of the remaining votes to precincts that are behind their usual turnout. "Like votes so far" spreads them in proportion to what each precinct has already counted.</small>
+    </div>
+  </section>
+
+  <section class="panel result" aria-live="polite">
+    <div class="verdict" id="verdict"></div>
+    <div class="track" id="track" aria-hidden="true"></div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="panel" style="display:grid;gap:12px">
+    <div class="tools">
+      <h2>Precinct by precinct</h2>
+      <button type="button" class="link" id="reset">Reset precinct changes</button>
+    </div>
+    <p class="note">Type a number in the change column to override one precinct. Negative means the leader does worse than they have so far. Leave it blank to follow the sliders.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Precinct</th><th id="th-so">Leader so far</th><th>Votes left</th><th id="th-ch">Leader's change (pts)</th><th id="th-late">Leader on votes left</th><th>Net votes</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <p class="note" id="foot"></p>
+  </section>
+</div>
+
+<script>
+const DATA = {"D2":{"meta":{"id":"OUSD2","a":"Fleisher","b":"Brouhard","full_a":"Arielle Fleisher","full_b":"Jennifer Brouhard","inc":"b","A":4582,"B":3988,"left":9430,"left_low":8400},"precincts":[{"p":"225900","area":"Lakeshore 57%; Grand Lake 41%","a":500,"b":434,"c22":2029,"shown":true},{"p":"353900","area":"Clinton 22%; Bella Vista 22%; Lynn 20%","a":364,"b":486,"c22":1677,"shown":true},{"p":"354610","area":"Oak Tree 72%; Hawthorne 27%","a":27,"b":32,"c22":90,"shown":true},{"p":"354300","area":"Rancho San Antonio 76%; Highland Terrace 11%","a":136,"b":142,"c22":543,"shown":true},{"p":"354400","area":"Highland Terrace 56%; Rancho San Antonio 42%","a":214,"b":253,"c22":826,"shown":true},{"p":"353310","area":"Clinton 59%; Ivy Hill 38%","a":284,"b":353,"c22":1609,"shown":true},{"p":"224000","area":"Trestle Glen 56%; Crocker Highland 21%; Lakeshore 20%","a":1230,"b":511,"c22":3270,"shown":true},{"p":"334000","area":"Clinton 48%; Cleveland Heights 37%; Merritt 15%","a":225,"b":286,"c22":1211,"shown":true},{"p":"333410","area":"Produce and Waterfront 53%; Chinatown 42%","a":435,"b":369,"c22":1541,"shown":true},{"p":"333810","area":"Merritt 64%; Clinton 36%","a":159,"b":159,"c22":194,"shown":true},{"p":"323200","area":"Cleveland Heights 99%","a":537,"b":545,"c22":2567,"shown":true},{"p":"333210","area":"Civic Center 51%; Lakeside 34%","a":58,"b":52,"c22":306,"shown":true},{"p":"333900","area":"Peralta/Laney 31%; East Peralta 26%; Merritt 11%","a":171,"b":195,"c22":808,"shown":true},{"p":"333910","area":"Produce and Waterfront 51%","a":172,"b":127,"c22":1045,"shown":true},{"p":"333450","area":"Produce and Waterfront 100%","a":70,"b":44,"c22":144,"shown":true}]},"D4":{"meta":{"id":"OUSD4","a":"Camp","b":"Hutchinson","full_a":"Kathryn Camp","full_b":"Mike Hutchinson","inc":"b","A":7978,"B":6831,"left":12550,"left_low":11170},"precincts":[{"p":"244000","area":"Forestland 40%; Montclair 26%; Merriwood 23%","a":548,"b":523,"c22":2247,"shown":true},{"p":"213500","area":"Claremont 38%; Hiller Highlands 14%","a":557,"b":568,"c22":2258,"shown":true},{"p":"344700","area":"Lincoln Highlands 43%; Redwood Heights 32%; Upper Diamond 20%","a":428,"b":288,"c22":1876,"shown":true},{"p":"224200","area":"Glenview 64%; Trestle Glen 34%","a":331,"b":203,"c22":1207,"shown":true},{"p":"344200","area":"Upper Diamond 66%; Dimond 34%","a":504,"b":321,"c22":1854,"shown":true},{"p":"346100","area":"Allendale 98%","a":314,"b":230,"c22":1092,"shown":true},{"p":"345900","area":"Woodminster 58%; Crestmont 42%","a":384,"b":305,"c22":1412,"shown":true},{"p":"345700","area":"Redwood Heights 99%","a":537,"b":466,"c22":2120,"shown":true},{"p":"345500","area":"Redwood Heights 61%; Laurel 22%; Upper Diamond 16%","a":527,"b":530,"c22":2313,"shown":true},{"p":"213600","area":"Merriwood 33%; Upper Rockridge 28%; Forestland 28%","a":605,"b":830,"c22":3061,"shown":true},{"p":"213100","area":"Claremont 17%; Panoramic Hill 12%","a":169,"b":187,"c22":805,"shown":true},{"p":"224800","area":"Upper Diamond 68%; Glenview 22%","a":269,"b":202,"c22":775,"shown":true},{"p":"245000","area":"Oakmore 85%; Upper Diamond 13%","a":570,"b":386,"c22":2044,"shown":true},{"p":"244300","area":"Piedmont Pines 57%; Montclair 20%; Shepherd Canyon 16%","a":1059,"b":843,"c22":3894,"shown":true},{"p":"224500","area":"Glenview 96%","a":599,"b":344,"c22":1960,"shown":true},{"p":"344410","area":"Upper Diamond 73%; Lincoln Highlands 27%","a":163,"b":143,"c22":361,"shown":true},{"p":"244810","area":"Piedmont Pines 12%","a":80,"b":35,"c22":210,"shown":true},{"p":"245300","area":"Montclair 81%; Upper Rockridge 18%","a":334,"b":427,"c22":1528,"shown":true}]},"D6":{"meta":{"id":"OUSD6","a":"A. Williams","b":"Bachelor","full_a":"Alexandra Williams","full_b":"Valarie Bachelor","inc":"b","A":4633,"B":3637,"left":8260,"left_low":7360},"precincts":[{"p":"362600","area":"Maxwell Park 87%; Frick 13%","a":552,"b":545,"c22":2402,"shown":true},{"p":"362500","area":"Havenscourt 28%; Seminary 24%; Lockwood-Tevis 20%","a":412,"b":281,"c22":1315,"shown":true},{"p":"365100","area":"Oak Knoll-Golf Links 51%; Eastmont Hills 36%; Toler Heights 12%","a":610,"b":475,"c22":2537,"shown":true},{"p":"364510","area":"Sequoyah 100%","a":195,"b":137,"c22":665,"shown":true},{"p":"364600","area":"Millsmont 99%","a":417,"b":401,"c22":1649,"shown":true},{"p":"362200","area":"Seminary 49%; Wentworth Holland 25%","a":217,"b":136,"c22":259,"shown":true},{"p":"361200","area":"Coliseum Industrial Complex 59%; Coliseum 37%","a":190,"b":91,"c22":391,"shown":true},{"p":"363000","area":"Havenscourt 56%; Hegenberger 19%; Bancroft Business 19%","a":283,"b":224,"c22":1011,"shown":true},{"p":"362800","area":"Frick 78%; Maxwell Park 15%","a":259,"b":227,"c22":754,"shown":true},{"p":"363200","area":"Arroyo Viejo 93%","a":237,"b":161,"c22":730,"shown":true},{"p":"364200","area":"Skyline-Hillcrest Estates 69%; Caballo Hills 17%; Sequoyah 12%","a":238,"b":232,"c22":960,"shown":true},{"p":"364310","area":"Caballo Hills 72%; Sequoyah 15%; Leona Heights 12%","a":525,"b":348,"c22":1879,"shown":true},{"p":"345310","area":"Mills College 69%; Maxwell Park 30%","a":126,"b":138,"c22":913,"shown":true},{"p":"365200","area":"Eastmont 62%; Eastmont Hills 36%","a":315,"b":203,"c22":844,"shown":true},{"p":"361100","area":"Coliseum Industrial Complex 63%","a":33,"b":28,"c22":503,"shown":true},{"p":"345710","area":"Leona Heights 85%; Redwood Heights 15%","a":null,"b":null,"c22":84,"shown":false}]}};
+const state = { race: 'D2', x: 3, y: 5, left: null, spread: 't22', overrides: {} };
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const signed = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n));
+const pct = (n) => n.toFixed(1) + '%';
+const clamp = (v) => Math.min(100, Math.max(0, v));
+const $ = (id) => document.getElementById(id);
+
+function model(extra = 0) {
+  const { meta: m, precincts } = DATA[state.race];
+  const L = state.left, N = m.A + m.B, avg = m.A / N * 100, T = N + L;
+  const C = precincts.reduce((s, p) => s + p.c22, 0);
+  const raw = precincts.map((p) => {
+    const n = p.shown ? p.a + p.b : 0;
+    return state.spread === 't22' ? Math.max(0, T * p.c22 / C - n) : n;
+  });
+  const rs = raw.reduce((s, v) => s + v, 0) || 1;
+  const rows = precincts.map((p, i) => {
+    const so = p.shown ? p.a / (p.a + p.b) * 100 : avg;
+    const side = so > 50 ? 'a' : so < 50 ? 'b' : 'tie';
+    const rule = side === 'a' ? -state.x : side === 'b' ? -state.y : -(state.x + state.y) / 2;
+    const ov = state.overrides[state.race + '|' + p.p];
+    const change = (ov === undefined ? rule : ov) - extra;
+    const left = L * raw[i] / rs;
+    const late = clamp(so + change);
+    return { p, so, side, change, rule, ov, left, late, net: left * (2 * late - 100) / 100 };
+  });
+  const gain = rows.reduce((s, r) => s + r.net, 0);
+  const lateA = rows.reduce((s, r) => s + r.left * r.late / 100, 0);
+  return { m, rows, margin: m.A - m.B + gain, lateShare: lateA / L * 100, needB: (L + m.A - m.B) / 2 / L * 100 };
+}
+
+// How many more points the leader could lose everywhere before the race flips.
+function cushion() {
+  if (model().margin <= 0) return 0;
+  let lo = 0, hi = 100;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (model(mid).margin > 0) lo = mid; else hi = mid; }
+  return lo;
+}
+
+function render() {
+  const r = model(), m = r.m, A = m.a, B = m.b;
+  document.querySelectorAll('[data-race]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.race === state.race));
+  document.querySelectorAll('[data-spread]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.spread === state.spread));
+  $('x').value = state.x; $('y').value = state.y; $('left').value = state.left;
+  const word = (v) => v === 0 ? 'same as so far' : (v > 0 ? `${v} pts worse` : `${-v} pts better`);
+  $('x-out').textContent = word(state.x); $('y-out').textContent = word(state.y);
+  $('left-out').textContent = fmt(state.left);
+  $('x-label').textContent = `${A} in precincts ${A} leads`;
+  $('y-label').textContent = `${A} in precincts ${B} leads`;
+  $('x-help').textContent = `${A}'s share of the votes left, compared with ${A}'s share so far in that precinct. ${B} gets the difference.`;
+  $('y-help').textContent = `Same idea, for the precincts where ${B} is ahead so far.`;
+  $('left-help').textContent = `Starting estimate: ${fmt(m.left)}. Using ballots received alone gives about ${fmt(m.left_low)}. Mail arriving through Nov 10 could add more.`;
+  $('th-so').textContent = `${A} so far`; $('th-late').textContent = `${A} on votes left`; $('th-ch').textContent = `${A}'s change (pts)`;
+
+  const win = r.margin >= 0 ? A : B, wc = r.margin >= 0 ? 'chal' : 'inc';
+  const close = Math.abs(r.margin) < 100;
+  $('verdict').innerHTML = `<span class="who" style="background:var(--${wc}-soft);color:var(--${wc})">${win}</span> ${close ? 'narrowly ' : ''}wins by <span class="num">${fmt(Math.abs(r.margin))}</span> votes`;
+  const total = m.A + m.B + state.left;
+  const aFinal = (total + r.margin) / 2 / total * 100;
+  $('track').innerHTML = `<span style="width:${aFinal}%;background:var(--chal)"></span><span style="flex:1;background:var(--inc)"></span><i class="mid"></i>`;
+  const c = cushion();
+  const stat = (k, v, n) => `<div class="stat"><span class="k">${k}</span><span class="v num">${v}</span><span class="n">${n}</span></div>`;
+  $('stats').innerHTML = [
+    stat(`Final result`, `${pct(aFinal)} – ${pct(100 - aFinal)}`, `${A} – ${B}, final round`),
+    stat(`${A}'s share of votes left`, pct(r.lateShare), `vs. ${pct(m.A / (m.A + m.B) * 100)} so far`),
+    stat(`${B} needs`, pct(r.needB), `of the votes left to win`),
+    stat(`Room before it flips`, r.margin > 0 ? `${c.toFixed(1)} pts` : 'Already flipped', r.margin > 0 ? `more ${A} could lose in every precinct` : `${A} is behind in this scenario`),
+  ].join('');
+
+  const sorted = [...r.rows].sort((a, b) => b.left - a.left);
+  $('rows').innerHTML = sorted.map((x) => {
+    const key = state.race + '|' + x.p.p;
+    const name = x.p.area.split(';')[0].replace(/\s\d+%$/, '');
+    const others = x.p.area.split(';').slice(1).map((s) => s.trim().replace(/\s\d+%$/, '')).join(', ');
+    const lead = x.side === 'a' ? `<span class="pill" style="background:var(--chal-soft);color:var(--chal)">${A}</span>` : x.side === 'b' ? `<span class="pill" style="background:var(--inc-soft);color:var(--inc)">${B}</span>` : `<span class="pill" style="border:1px solid var(--line)">Tied</span>`;
+    const shownSo = x.p.shown ? pct(x.so) : 'hidden';
+    return `<tr><td class="place"><b>${name}</b><span>Precinct ${x.p.p}${others ? ' · ' + others : ''}</span></td>
+      <td class="num">${lead} ${shownSo}</td><td class="num">${fmt(x.left)}</td>
+      <td><input id="ov-${x.p.p}" data-key="${key}" class="${x.ov === undefined ? '' : 'set'}" inputmode="decimal" placeholder="${x.rule}" value="${x.ov === undefined ? '' : x.ov}" aria-label="${A}'s change in precinct ${x.p.p}"></td>
+      <td class="num">${pct(x.late)}</td><td class="num" style="color:var(--${x.net >= 0 ? 'chal' : 'inc'})">${signed(x.net)}</td></tr>`;
+  }).join('');
+  const hidden = DATA[state.race].precincts.some((p) => !p.shown);
+  const tied = r.rows.some((x) => x.side === 'tie');
+  $('foot').textContent = `Net votes are ${A}'s gain (green) or ${B}'s gain (red) from each precinct's votes left. Shares are two-candidate, final-round.` + (tied ? ' A precinct tied exactly at 50% uses the average of the two sliders.' : '') + (hidden ? ' One small precinct has fewer than 50 votes, so its result stays hidden and it uses the district average.' : '') + ' Votes left by precinct are estimates; the county only reports ballots received for the whole district.';
+}
+
+function setRace(k) {
+  state.race = k; state.left = DATA[k].meta.left; render();
+}
+document.querySelectorAll('[data-race]').forEach((b) => b.addEventListener('click', () => setRace(b.dataset.race)));
+document.querySelectorAll('[data-spread]').forEach((b) => b.addEventListener('click', () => { state.spread = b.dataset.spread; render(); }));
+['x', 'y', 'left'].forEach((id) => $(id).addEventListener('input', (e) => { state[id] = Number(e.target.value); render(); }));
+$('rows').addEventListener('change', (e) => {
+  const k = e.target.dataset.key; if (!k) return;
+  const v = e.target.value.trim().replace('−', '-');
+  if (v === '' || isNaN(Number(v))) delete state.overrides[k]; else state.overrides[k] = Number(v);
+  render();
+});
+$('reset').addEventListener('click', () => {
+  Object.keys(state.overrides).forEach((k) => { if (k.startsWith(state.race + '|')) delete state.overrides[k]; });
+  render();
+});
+setRace('D2');
+</script>
+
+<p style="max-width:980px;margin:24px auto 0;padding:0 16px;font:13px/1.4 -apple-system,Helvetica,Arial,sans-serif;color:#66645e">Independent what-if model, not an official county site. Results are unofficial until certified. Source: Alameda County Registrar of Voters.</p>
+</body>
+</html>
