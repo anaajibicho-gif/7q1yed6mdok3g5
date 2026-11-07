@@ -1090,9 +1090,10 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const finalVotes = sc.lead + sc.trail + sc.left;
     const known = here.filter((r) => r.shown);
     const overallB = d3.sum(known, (r) => r.votes_b) / d3.sum(known, (r) => r.total) * 100;
-    const areas = here.map((r) => {
-      const counted = r.shown ? r.total : 0;
-      const left = Math.max(0, Math.round(finalVotes * r.cast22 / pastTotal - counted));
+    const room = here.map((r) => Math.max(0, finalVotes * r.cast22 / pastTotal - (r.shown ? r.total : 0)));
+    const roomTotal = d3.sum(room) || 1;
+    const areas = here.map((r, i) => {
+      const left = Math.round(sc.left * room[i] / roomTotal);
       const shareB = r.shown ? r.share_b : overallB;
       const gain = Math.round(left * (100 - 2 * shareB) / 100);
       return { ...r, left, gain, shareB, shareA: 100 - shareB };
