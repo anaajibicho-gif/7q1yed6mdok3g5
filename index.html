@@ -151,6 +151,21 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-stats b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); }
 .oe-tip { position: absolute; z-index: 2; max-width: 220px; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); }
 .oe-chart { min-height: 170px; position: relative; }
+.oe-wi-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md) var(--cds-gap-xl); align-items: end; }
+.oe-wi-ctl { display: grid; gap: 4px; }
+.oe-wi-ctl .oe-wi-row { display: flex; align-items: center; gap: 6px; }
+.oe-wi-step { font: inherit; font-weight: 600; width: 34px; height: 34px; border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); cursor: pointer; }
+.oe-wi-ctl output { min-width: 9.5em; font-weight: var(--cds-font-weight-medium); }
+.oe-wi-reset { font: inherit; font-size: var(--cds-font-size-caption); padding: 7px 12px; border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); cursor: pointer; }
+.oe-wi-verdict { font-family: var(--font-anthropic-serif); font-size: 30px; line-height: 1.2; }
+.oe-wi-verdict span { padding: 0 6px; border-radius: 6px; }
+.oe-wi-track { position: relative; display: flex; height: 18px; border-radius: 4px; overflow: hidden; }
+.oe-wi-track i { display: block; height: 100%; }
+.oe-wi-track b { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--color-fg); }
+.oe-wi input[type=number] { width: 5.2em; font: inherit; font-variant-numeric: tabular-nums; padding: 4px 6px; border: 1px solid var(--color-border-line); border-radius: 6px; background: var(--color-panel); color: var(--color-fg); text-align: right; }
+.oe-wi input.oe-wi-set { border: 2px solid var(--color-fg); }
+.oe-wi td small { display: block; color: var(--color-fg-muted); font-size: 12px; }
+.oe-wi-step:focus-visible, .oe-wi-reset:focus-visible, .oe-wi input:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
 </style>
 <div class="oe">
   <header class="oe-head" id="top">
@@ -212,6 +227,16 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         </table>
       </div>
       <p class="oe-sub">Challengers are green and incumbents are red. Results use fixed point gaps, and in Districts 4 and 6 they're final-round votes. The other two views set their color groups from that district's areas, so compare those colors within a district, not across districts. Expected gain assumes each area's remaining votes split like its votes so far. Late mail may split differently. The needs column adds the same shift to every area, one simple way to reach the winning total. In Districts 4 and 6, shares are final-round votes after ranked-choice transfers. Sources: Alameda County cast vote record, precinct maps and certified 2022 vote statement, and City of Oakland neighborhood map. Unofficial results as of November 6 at 5:05 PM.</p>
+    </article>
+    <h2 id="what-if">What if: how the votes left split</h2>
+    <p class="oe-sub">Each area starts at the split it gave in the latest mail, counted since election night. Change any area's share, move every area at once, or change how many votes are left, and the result updates. Areas with fewer than 50 recent ballots start from their share so far plus the district's recent shift. Changes stay in your view only.</p>
+    <article class="oe-card oe-wi" id="what-if-card">
+      <div class="oe-presets" role="group" aria-label="Choose a district for the what-if">
+        <button type="button" data-map-race="D2">District 2</button>
+        <button type="button" data-map-race="D4">District 4</button>
+        <button type="button" data-map-race="D6">District 6</button>
+      </div>
+      <div data-draw="what-if" data-source="precmap live byrace cvr">—</div>
     </article>
     <h2 id="ballot-file">What the county's ballot-level file shows</h2>
     <p class="oe-sub">From the county's cast vote record, exported November 6 at 5:05 PM with Post Election Update #1. It covers only ballots counted by then, and it's refreshed when the county releases a new file. Its final ranked-choice totals match the county's in all three races. This page shows combined totals only, with no ballot-level or precinct-level data. Uncounted mail isn't included, so these patterns are clues rather than results, and scan date isn't the same as the date a voter returned a ballot.</p>
@@ -1136,7 +1161,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       r.soFar = shareOf(r);
       r.needed = clamp(shareOf(r) + lift);
     });
-    return { race, id, a, b, sc, areas, totalLeft, leadNow, finishSame, finishShift, finishRecent, recentAreas, recentN, lateShare, behind, ahead, pace, needs, late };
+    return { race, id, a, b, sc, areas, totalLeft, leadNow, finishSame, finishShift, finishRecent, recentAreas, recentN, recentShift, totalA, totalB, lateShare, behind, ahead, pace, needs, late };
   };
   const leadWords = (m, value) => (value >= 0 ? `${m.a} by ${fmt(value)}` : `${m.b} by ${fmt(-value)}`);
   const splitWords = (needs) => {
@@ -1312,6 +1337,118 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       return tr;
     }));
   });
+
+  // What-if on the votes left: each area starts at its recent mail split; the viewer can change any of it.
+  const whatIf = {};
+  const wiState = (race) => (whatIf[race] = whatIf[race] || { shift: 0, left: null, set: {} });
+  const wiClamp = (v) => Math.min(100, Math.max(0, v));
+  const wiRun = (m, st, extra = 0) => {
+    const L = st.left === null ? m.totalLeft : st.left;
+    const scale = m.totalLeft ? L / m.totalLeft : 0;
+    const rows = m.areas.map((r) => {
+      const base = r.late_share_b !== null && r.late_share_b !== undefined ? r.late_share_b : wiClamp(r.shareB + m.recentShift);
+      const fixed = st.set[r.precinct];
+      const used = wiClamp((fixed === undefined ? wiClamp(base + st.shift) : fixed) + extra);
+      const left = r.left * scale;
+      return { r, base, fixed, used, left, net: left * (100 - 2 * used) / 100 };
+    });
+    const final = m.leadNow + d3.sum(rows, (x) => x.net);
+    const bLate = L ? d3.sum(rows, (x) => x.left * x.used) / L : 0;
+    return { L, rows, final, bLate };
+  };
+  const drawWhatIf = (n, force = false) => {
+    const m = mapModel();
+    if (!m) return dash0(n);
+    if (!force && n.contains(document.activeElement) && document.activeElement.tagName === 'INPUT' && n.dataset.race === m.race) return;
+    n.dataset.race = m.race;
+    const st = wiState(m.race);
+    const run = wiRun(m, st);
+    const L = run.L;
+    const needB = L ? (L + m.leadNow) / 2 / L * 100 : null;
+    let lo = -100; let hi = 100;
+    for (let i = 0; i < 40; i += 1) { const mid = (lo + hi) / 2; if (wiRun(m, st, mid).final > 0) lo = mid; else hi = mid; }
+    const flip = (lo + hi) / 2;
+    const redraw = (focusId) => { drawWhatIf(n, true); if (focusId) { const f = document.getElementById(focusId); if (f) f.focus(); } };
+    const words = (v) => v === 0 ? 'same as their recent split' : `${Math.abs(v)} pts ${v > 0 ? 'better' : 'worse'} for ${m.b}`;
+    const stepper = (label, out, minus, plus, help) => {
+      const box = el('div', 'oe-wi-ctl');
+      const row = el('div', 'oe-wi-row');
+      const mb = el('button', 'oe-wi-step', '−'); mb.type = 'button'; mb.setAttribute('aria-label', label + ', less'); mb.addEventListener('click', () => { minus(); redraw(); });
+      const pb = el('button', 'oe-wi-step', '+'); pb.type = 'button'; pb.setAttribute('aria-label', label + ', more'); pb.addEventListener('click', () => { plus(); redraw(); });
+      row.append(mb, el('output', '', out), pb);
+      box.append(el('span', 'oe-label', label), row, el('span', 'oe-label', help));
+      return box;
+    };
+    const controls = el('div', 'oe-wi-controls');
+    const reset = el('button', 'oe-wi-reset', 'Reset to the latest batch'); reset.type = 'button';
+    reset.addEventListener('click', () => { whatIf[m.race] = { shift: 0, left: null, set: {} }; redraw(); });
+    controls.append(
+      stepper('Move every area', words(st.shift), () => { st.shift -= 1; }, () => { st.shift += 1; }, `Points added to ${m.b}'s share in every area you haven't typed over`),
+      stepper('Votes left', fmt(L), () => { st.left = Math.max(500, L - 250); }, () => { st.left = L + 250; }, `Starting estimate: ${fmt(m.totalLeft)}`),
+      reset);
+    const final = Math.round(run.final);
+    const winner = final > 0 ? m.a : m.b;
+    const verdict = el('p', 'oe-wi-verdict');
+    if (final === 0) verdict.textContent = 'Dead even';
+    else {
+      const who = el('span', '', winner);
+      const color = final > 0 ? 'var(--oe-challenger)' : 'var(--oe-incumbent)';
+      who.style.color = color; who.style.background = final > 0 ? 'var(--oe-c1)' : 'var(--oe-i1)';
+      verdict.append(who, ` ${Math.abs(final) < 100 ? 'narrowly ' : ''}wins by ${fmt(Math.abs(final))} votes`);
+    }
+    const totalA = m.totalA + d3.sum(run.rows, (x) => x.left * (100 - x.used) / 100);
+    const totalB = m.totalB + d3.sum(run.rows, (x) => x.left * x.used / 100);
+    const aPct = totalA / (totalA + totalB) * 100;
+    const track = el('div', 'oe-wi-track');
+    const ta = el('i'); ta.style.width = aPct + '%'; ta.style.background = 'var(--oe-challenger)';
+    const tb = el('i'); tb.style.flex = '1'; tb.style.background = 'var(--oe-incumbent)';
+    track.append(ta, tb, el('b'));
+    track.setAttribute('aria-hidden', 'true');
+    const tile = (label, value, note) => { const box = el('div'); box.append(el('span', 'oe-label', label), el('b', '', value), el('span', 'oe-label', note)); return box; };
+    const stats = el('div', 'oe-stats');
+    stats.append(
+      tile('Final result', `${aPct.toFixed(1)}% – ${(100 - aPct).toFixed(1)}%`, `${m.a} – ${m.b}${m.id === 'OUSD2' ? '' : ', final round'}`),
+      tile(`${m.b} on the votes left`, run.bLate.toFixed(1) + '%', needB === null ? '' : `Needs ${needB.toFixed(1)}% to win`),
+      tile('Room before it flips', `${Math.abs(flip).toFixed(1)} points`, run.final > 0 ? `More every area would have to move toward ${m.b}` : `More every area would have to move toward ${m.a}`),
+      tile('Each point is worth', fmt(L / 50) + ' votes', `One point of ${m.b}'s share in every area, on the margin`));
+    const table = el('table');
+    const head = el('thead'); const hr = el('tr');
+    ['Area', 'Votes left', `${m.b} so far`, `${m.b} in latest mail`, `${m.b} on votes left`, 'Net votes'].forEach((t) => hr.append(el('th', '', t)));
+    head.append(hr);
+    const body = el('tbody');
+    [...run.rows].sort((x, y) => y.left - x.left).forEach((x) => {
+      const tr = el('tr');
+      const place = el('td'); place.append(el('span', '', mainArea(x.r)), el('small', '', `Precinct ${x.r.precinct}`));
+      const so = el('td', '', x.r.shown ? x.r.shareB.toFixed(1) + '%' : 'Hidden');
+      const recent = el('td');
+      if (x.r.late_share_b !== null && x.r.late_share_b !== undefined) recent.append(el('span', '', x.r.late_share_b.toFixed(1) + '%'), el('small', '', fmt(x.r.late_n) + ' ballots'));
+      else recent.append(el('span', '', x.base.toFixed(1) + '%'), el('small', '', 'Few ballots, so district shift'));
+      const inputCell = el('td');
+      const input = el('input');
+      input.type = 'number'; input.min = '0'; input.max = '100'; input.step = '0.5';
+      input.id = 'wi-' + m.race + '-' + x.r.precinct;
+      input.value = x.used.toFixed(1);
+      input.setAttribute('aria-label', `${m.b}'s share of votes left in ${mainArea(x.r)}, precinct ${x.r.precinct}`);
+      if (x.fixed !== undefined) input.classList.add('oe-wi-set');
+      input.addEventListener('change', () => {
+        const v = input.value.trim() === '' ? NaN : Number(input.value);
+        if (Number.isNaN(v)) delete st.set[x.r.precinct]; else st.set[x.r.precinct] = wiClamp(v);
+        redraw(input.id);
+      });
+      inputCell.append(input);
+      const net = Math.round(x.net);
+      const netCell = el('td', '', net === 0 ? '0' : (net > 0 ? `${m.a} +${fmt(net)}` : `${m.b} +${fmt(-net)}`));
+      netCell.style.color = net > 0 ? 'var(--oe-challenger)' : net < 0 ? 'var(--oe-incumbent)' : '';
+      tr.append(place, el('td', '', fmt(x.left)), so, recent, inputCell, netCell);
+      body.append(tr);
+    });
+    table.append(head, body);
+    const scroll = el('div', 'oe-scroll'); scroll.append(table);
+    const typed = Object.keys(st.set).length;
+    const note = el('p', 'oe-sub', `Type a share in the "${m.b} on votes left" column to set one area; a thick border marks the ones you've set${typed ? ` (${typed} now)` : ''}. Clear a box to put it back. Net votes are each area's gain for ${m.a} or ${m.b} from its votes left. Votes left by area are estimates spread by each area's 2022 turnout. Shares are two-candidate${m.id === 'OUSD2' ? '' : ', final-round'}.`);
+    n.replaceChildren(controls, verdict, track, stats, scroll, note);
+  };
+  dash.draw('what-if', (n) => drawWhatIf(n));
 
   const cell = (v) => v === undefined || v === null ? '—' : v;
   dash.draw('midterms', (n) => {
