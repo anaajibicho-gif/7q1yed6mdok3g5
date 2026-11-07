@@ -1153,7 +1153,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const totalA = d3.sum(known, (r) => r.votes_a);
     const totalB = d3.sum(known, (r) => r.votes_b);
     const leadNow = totalA - totalB;
-    const totalLeft = d3.sum(areas, (r) => r.left);
+    const totalLeft = sc.left;
     const finishSame = leadNow + d3.sum(areas, (r) => r.gain);
     const finishShift = leadNow + d3.sum(areas, (r) => Math.round(r.left * (100 - 2 * Math.min(100, Math.max(0, r.shareB + shift))) / 100));
     const recent = known.filter((r) => r.late_share_b !== null);
