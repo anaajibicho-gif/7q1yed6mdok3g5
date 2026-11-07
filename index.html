@@ -66,6 +66,21 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-label { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
 .oe-fresh b { font-weight: var(--cds-font-weight-medium); }
 .oe-problem { color: var(--color-bad); font-size: var(--cds-font-size-caption); }
+.oe-banner { display: grid; gap: 10px; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--oe-b-line); background: var(--oe-b-bg); color: var(--oe-b-ink); }
+.oe-banner[data-state=live] { --oe-b-bg: #e3f5e9; --oe-b-line: #1f8a4c; --oe-b-ink: #0d4a26; }
+.oe-banner[data-state=slow] { --oe-b-bg: #fff3d6; --oe-b-line: #c98a00; --oe-b-ink: #5c3d00; }
+.oe-banner[data-state=stale] { --oe-b-bg: #fde4e1; --oe-b-line: #c8372d; --oe-b-ink: #6e1510; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .oe-banner[data-state=live] { --oe-b-bg: #12321f; --oe-b-line: #4cc27a; --oe-b-ink: #c9f2d7; }
+  :root:not([data-theme="light"]) .oe-banner[data-state=slow] { --oe-b-bg: #3a2c08; --oe-b-line: #e0a82e; --oe-b-ink: #f8e3b0; }
+  :root:not([data-theme="light"]) .oe-banner[data-state=stale] { --oe-b-bg: #3d1513; --oe-b-line: #f0675c; --oe-b-ink: #ffd2cd; } }
+:root[data-theme="dark"] .oe-banner[data-state=live] { --oe-b-bg: #12321f; --oe-b-line: #4cc27a; --oe-b-ink: #c9f2d7; }
+:root[data-theme="dark"] .oe-banner[data-state=slow] { --oe-b-bg: #3a2c08; --oe-b-line: #e0a82e; --oe-b-ink: #f8e3b0; }
+:root[data-theme="dark"] .oe-banner[data-state=stale] { --oe-b-bg: #3d1513; --oe-b-line: #f0675c; --oe-b-ink: #ffd2cd; }
+.oe-banner-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.oe-banner-tag { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--oe-b-line); color: var(--color-panel); }
+.oe-banner-big { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.oe-banner-small { font-size: var(--cds-font-size-caption); line-height: 1.4; }
+.oe-banner hr { border: 0; border-top: 1px solid var(--oe-b-line); opacity: .4; margin: 0; width: 100%; }
 .oe-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-md); align-content: start; min-width: 0; }
 .oe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-md); }
 .oe-big { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xl); }
@@ -144,9 +159,11 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     <p class="oe-sub">November 3, 2026 general election. All counts are unofficial until certified, and the first numbers are mail ballots only, so early leads can shift.</p>
   </header>
 
+  <section class="oe-banner" data-state="slow" aria-live="polite" data-draw="banner" data-source="live">—</section>
+
   <section class="oe-fresh" id="freshness" aria-label="How current this page is">
     <div><span class="oe-label">County last posted results</span><b data-draw="county-time" data-source="live">—</b><span class="oe-label" data-draw="county-report" data-source="live">—</span></div>
-    <div><span class="oe-label">Last update sent to this page</span><b data-draw="checked-time" data-source="live">—</b><span class="oe-label">The county is checked every 30 seconds. This time only moves when a change is sent, or at a regular check-in: about every 15 minutes.</span></div>
+    <div><span class="oe-label">Last update sent to this page</span><b data-draw="checked-time" data-source="live">—</b><span class="oe-label">The county is checked every 20 seconds. This time moves when results change, and at a check-in at least every 15 minutes.</span></div>
     <div><span class="oe-label">We first saw these results</span><b data-draw="results-seen" data-source="live">—</b><span class="oe-label">Time this page's results changed</span></div>
     <div><span class="oe-label">Ballot returns last changed</span><b data-draw="returns-seen" data-source="live">—</b><span class="oe-label">The county gives no time for these, so this is when we saw it</span></div>
     <p class="oe-problem" data-draw="problem" data-source="live">—</p>
@@ -354,6 +371,37 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const y = of(rows, 'choice').find((x) => x.key === 'EE|Yes');
     return 'Measure EE is at ' + y.pct.toFixed(1) + '% Yes with ' + fmt(ee.votes_total) + ' votes counted, as of the county’s ' + s.county_report + '.';
   });
+  const ago = (iso) => {
+    if (!iso) return '';
+    const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+    if (m < 1) return 'just now';
+    if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
+    const h = Math.round(m / 60);
+    if (h < 36) return h + (h === 1 ? ' hour ago' : ' hours ago');
+    const d = Math.round(h / 24);
+    return d + (d === 1 ? ' day ago' : ' days ago');
+  };
+  const drawBanner = (n) => {
+    const rows = live();
+    if (!rows) return;
+    const s = one(rows, 'status');
+    const age = (Date.now() - new Date(s.checked_at)) / 60000;
+    const state = s.problem ? 'stale' : age <= 20 ? 'live' : age <= 60 ? 'slow' : 'stale';
+    n.dataset.state = state;
+    n.replaceChildren();
+    const top = el('div', 'oe-banner-row');
+    top.append(el('span', 'oe-banner-tag', state === 'live' ? 'Live' : state === 'slow' ? 'Delayed' : 'Not updating'),
+      el('span', 'oe-banner-big', 'Last checked ' + ago(s.checked_at)), el('span', 'oe-banner-small', when(s.checked_at)));
+    const res = el('div', 'oe-banner-row');
+    res.append(el('span', 'oe-banner-big', 'Results last posted by the county: ' + s.county_updated.replace(';', ' at')),
+      el('span', 'oe-banner-small', '(' + ago(s.results_changed) + ')'));
+    const note = el('p', 'oe-banner-small', state === 'live'
+      ? 'This page checks the county every 20 seconds and refreshes on its own. No need to reload.'
+      : s.problem ? 'The latest check had a problem, so numbers may be old: ' + s.problem
+      : 'This copy has stopped getting updates, so newer results may exist. The live version is at anaajibicho-gif.github.io/7q1yed6mdok3g5.');
+    n.append(top, el('hr'), res, note);
+  };
+  dash.draw('banner', (n) => { drawBanner(n); clearInterval(n._tick); n._tick = setInterval(() => drawBanner(n), 15000); });
   text('county-time', (rows) => one(rows, 'status').county_updated.replace(';', ' at'));
   text('county-report', (rows) => one(rows, 'status').county_report);
   text('checked-time', (rows) => when(one(rows, 'status').checked_at));
