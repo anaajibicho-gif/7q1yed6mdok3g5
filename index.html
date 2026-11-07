@@ -151,6 +151,10 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-stats b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); }
 .oe-tip { position: absolute; z-index: 2; max-width: 220px; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); }
 .oe-chart { min-height: 170px; position: relative; }
+.oe-wi { min-width: 0; max-width: 100%; }
+.oe-wi > [data-draw="what-if"] { display: grid; gap: var(--cds-gap-md); min-width: 0; }
+.oe-wi .oe-scroll { min-width: 0; max-width: 100%; }
+.oe-wi-ctl { min-width: 0; max-width: 24rem; }
 .oe-wi-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md) var(--cds-gap-xl); align-items: end; }
 .oe-wi-ctl { display: grid; gap: 4px; }
 .oe-wi-ctl .oe-wi-row { display: flex; align-items: center; gap: 6px; }
