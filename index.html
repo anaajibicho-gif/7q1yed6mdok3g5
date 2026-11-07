@@ -1175,8 +1175,8 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       tile('Current lead', leadWords(m, m.leadNow), m.id === 'OUSD2' ? 'Two-way count' : 'Final ranked-choice round'),
       tile('If votes split as so far', leadWords(m, m.finishSame), 'Estimated final margin'),
       tile('If late mail keeps shifting', leadWords(m, m.finishShift), `${m.b} near ${m.lateShare.toFixed(1)}%, as in the latest mail batch`),
-      ...(m.finishRecent === null ? [] : [tile('If each area keeps its recent split', leadWords(m, m.finishRecent),
-        (Math.abs(m.finishRecent) < 150 ? 'Too close to call. ' : '') + `Each area's votes left split like its mail counted since election night (${fmt(m.recentN)} ballots, ${m.recentAreas} areas with 50 or more)`)]));
+      ...(m.finishRecent === null ? [] : [tile('If each area keeps its recent split', Math.abs(m.finishRecent) < 25 ? 'Dead even' : leadWords(m, m.finishRecent),
+        (Math.abs(m.finishRecent) < 25 ? (m.finishRecent === 0 ? 'An exact tie in this estimate. ' : `${leadWords(m, m.finishRecent)} in this estimate. `) : '') + (Math.abs(m.finishRecent) < 150 ? 'Too close to call. ' : '') + `Each area's votes left split like its mail counted since election night (${fmt(m.recentN)} ballots, ${m.recentAreas} areas with 50 or more)`)]));
   });
   dash.draw('map-path-title', (n) => {
     const m = mapModel();
