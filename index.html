@@ -376,10 +376,10 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
     if (m < 1) return 'just now';
     if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
-    const h = Math.round(m / 60);
-    if (h < 36) return h + (h === 1 ? ' hour ago' : ' hours ago');
-    const d = Math.round(h / 24);
-    return d + (d === 1 ? ' day ago' : ' days ago');
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+    const d = Math.floor(h / 24), r = h % 24;
+    return d + (d === 1 ? ' day' : ' days') + (r ? ', ' + r + (r === 1 ? ' hour' : ' hours') : '') + ' ago';
   };
   const drawBanner = (n) => {
     const rows = live();
