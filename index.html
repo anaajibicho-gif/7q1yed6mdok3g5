@@ -181,6 +181,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-more > summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--color-fg-muted); }
 .oe-more[open] > summary::after { content: "−"; }
 .oe-more > summary:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; border-radius: 12px; }
+.oe-more + .oe-more { margin-top: calc(var(--cds-gap-sm) - var(--cds-gap-xl)); }
 .oe-more-body { display: grid; gap: var(--cds-gap-md); padding: 0 18px 18px; min-width: 0; }
 .oe-more-body > .oe-card { border: 0; padding: 0; background: transparent; }
 .oe-src { min-width: 0; }
@@ -1557,7 +1558,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       bar.append(ia, ib, el('b')); bar.setAttribute('aria-hidden', 'true');
       const names = el('div', 'oe-gl-names');
       names.append(el('span', '', `Yes ${y.pct.toFixed(1)}%`), el('span', '', `No ${(100 - y.pct).toFixed(1)}%`));
-      card.append(top, el('p', 'oe-gl-big', `Yes ${y.pct.toFixed(1)}%`), bar, names, el('p', 'oe-gl-say', `${fmt(ee.votes_total)} votes counted. Charter changes giving the mayor more authority; needs a simple majority.`));
+      card.append(top, el('p', 'oe-gl-big', `Yes ${y.pct.toFixed(1)}%`), bar, el('p', 'oe-gl-say', `${fmt(ee.votes_total)} votes counted. Charter changes giving the mayor more authority; needs a simple majority.`));
       cards.push(card);
     }
     n.replaceChildren(...cards);
