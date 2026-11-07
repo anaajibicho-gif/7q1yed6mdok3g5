@@ -157,6 +157,11 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-src li b { font-weight: var(--cds-font-weight-medium); }
 .oe-src td small { display: block; color: var(--color-fg-muted); font-size: 12px; }
 .oe-src .oe-big { font-weight: var(--cds-font-weight-medium); font-size: 17px; }
+.oe-src-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--cds-gap-md); }
+.oe-src-card { display: grid; gap: 8px; align-content: start; padding: var(--cds-pad-md); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); min-width: 0; }
+.oe-src-big { font-family: var(--font-anthropic-serif); font-size: 28px; line-height: 1.15; }
+.oe-src-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.oe-src-card input[type=range] { width: 100%; accent-color: var(--color-fg); }
 .oe-wi > [data-draw="what-if"] { display: grid; gap: var(--cds-gap-md); min-width: 0; }
 .oe-wi .oe-scroll { min-width: 0; max-width: 100%; }
 .oe-wi-ctl { min-width: 0; max-width: 24rem; }
@@ -201,7 +206,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     <p class="oe-sub">Bars show how each post's new votes split. Lines show each candidate's running share of all votes counted. Districts 4 and 6 show the final ranked-choice round: the last point is the county's count, and dashed lines and hollow points are estimates made by applying that round's vote transfers to earlier posts. Win numbers start from past turnout and aren't county figures. You can change each race's expected turnout below, and the numbers for that race will update. Changes apply only to your view.</p>
     <div class="oe-moves" data-draw="ousd-moves" data-source="live byrace">—</div>
     <h2 id="precinct-map">Results and remaining votes by area</h2>
-    <p class="oe-sub">Who's ahead in each area so far, how many votes it likely still has to count, and what that could mean for each candidate. Votes left are estimated from each area's past turnout and the race's turnout setting above, so they're estimates, not county counts.</p>
+    <p class="oe-sub">Who's ahead in each area so far, how many votes it likely still has to count, and what that could mean for each candidate. Each district's votes left come from "How many votes are left" below and are spread across areas by each area's 2022 turnout, so they're estimates, not county counts.</p>
     <article class="oe-card" id="precinct-map-card">
       <div class="oe-map-controls">
         <div class="oe-presets" role="group" aria-label="Choose a district">
@@ -238,7 +243,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       <p class="oe-sub">Challengers are green and incumbents are red. Results use fixed point gaps, and in Districts 4 and 6 they're final-round votes. The other two views set their color groups from that district's areas, so compare those colors within a district, not across districts. Expected gain assumes each area's remaining votes split like its votes so far. Late mail may split differently. The needs column adds the same shift to every area, one simple way to reach the winning total. In Districts 4 and 6, shares are final-round votes after ranked-choice transfers. Sources: Alameda County cast vote record, precinct maps and certified 2022 vote statement, and City of Oakland neighborhood map. Unofficial results as of November 6 at 5:05 PM.</p>
     </article>
     <h2 id="votes-left">How many votes are left, and where that number comes from</h2>
-    <p class="oe-sub">The county doesn't report uncounted ballots by district or precinct, only for the whole county. So every "votes left" number on this page is an estimate built in the four steps below, using the county's own figures. The map and the what-if use these same numbers.</p>
+    <p class="oe-sub">The county doesn't report uncounted ballots by district or precinct. So every "votes left" number on this page is an estimate: by default, the midpoint between turnout like 2022 and turnout like 2018, the two most recent comparable midterms. Change it for any district below, and the map and the what-if follow.</p>
     <article class="oe-card oe-src" data-draw="left-source" data-source="live byrace cvr">—</article>
     <h2 id="what-if">What if: how the votes left split</h2>
     <p class="oe-sub">Each area starts at the split it gave in the latest mail, counted since election night. Change any area's share, move every area at once, or change how many votes are left, and the result updates. Areas with fewer than 50 recent ballots start from their share so far plus the district's recent shift. Changes stay in your view only.</p>
@@ -351,7 +356,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         const a = live.find((x) => x.kind === 'returns' && x.key === r.area) || {};
         const h = comparison.find((x) => x.kind === 'area' && x.key === r.area) || {};
         const c = comparison.find((x) => x.kind === 'race' && x.key === r.key) || {};
-        let low; let high; let mid; let estBallots = null; let rate = null; let rateSource = null;
+        let low; let high; let mid; let reportMid = null; let estBallots = null; let rate = null; let rateSource = null;
         const first = live.filter((x) => x.kind === 'choice' && x.race_id === r.key);
         const rcv = live.filter((x) => x.kind === 'rcv' && x.race_id === r.key);
         const rcvLive = rcv.filter((x) => x.votes > 0);
@@ -365,14 +370,13 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
           const toVotes = (ballots) => Math.round(ballots * a.returned / county.returned * perBallot);
           const final = u.processed + u.total;
           estBallots = Math.round(final * a.returned / county.returned);
-          low = toVotes(final - u.other);
-          mid = toVotes(final);
-          high = toVotes(final + u.mail_after);
-        } else {
-          low = Math.round(c.votes_2022 / h.issued_2022 * a.issued);
-          high = Math.round(low * c18 / c22.turnout_pct);
-          mid = Math.round((low + high) / 2);
+          reportMid = toVotes(final);
         }
+        // Default: midpoint of two comparable midterms. 2022: this race's votes per mail ballot issued, applied to ballots issued now.
+        // 2018: that rate raised by how much higher countywide turnout was in 2018 than in 2022.
+        low = Math.round(c.votes_2022 / h.issued_2022 * a.issued);
+        high = Math.round(low * c18 / c22.turnout_pct);
+        mid = Math.round((low + high) / 2);
         const counted = (rcv.length ? rcv : first);
         const leader = r.group === 'Measures' ? counted.find((x) => x.choice === 'Yes') : [...counted].sort((x, y) => y.votes - x.votes)[0];
         const decided = first.length > 1 && r.key !== 'RTM';
@@ -390,6 +394,8 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
           to_win: win_at === null ? null : Math.max(0, win_at - (leader ? leader.votes : 0)),
           trailer: behind ? behind.choice : null, trailer_votes: behind ? behind.votes : 0, votes_left: left,
           trailer_to_win: win_at === null || !behind ? null : Math.max(0, win_at - behind.votes), trail_share,
+          report_mid: reportMid, report_left: reportMid === null ? null : Math.max(0, Math.round(reportMid * finalRound - d3.sum(counted, (x) => x.votes))),
+          rate_2022_votes: c.votes_2022 / h.issued_2022, issued_2022: h.issued_2022, votes_2022_race: c.votes_2022, turnout_2018: c18, turnout_2022: c22.turnout_pct,
           est_ballots: estBallots, rate, rate_source: rateSource, counted_ballots: cb ? cb.ballots : null, final_round: finalRound,
           left_low: Math.max(0, Math.round(low * finalRound - d3.sum(counted, (x) => x.votes))),
           left_high: Math.max(0, Math.round(high * finalRound - d3.sum(counted, (x) => x.votes))),
@@ -472,9 +478,10 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
   };
   let focusAfterDraw = null;
   const countyReport = (rows) => (rows || []).find((r) => r.kind === 'unprocessed');
-  const presetNames = (rows) => (countyReport(rows) ? ['Fewer ballots', 'County estimate', 'More late mail'] : ['2022 rate', 'Midpoint', '2018-adjusted rate']);
+  const presetNames = () => ['Like 2022', 'Midpoint (default)', 'Like 2018'];
   const basisWords = (rows) => {
     const u = countyReport(rows);
+    if (u || !u) return 'An estimate, not a forecast. Expected votes are the midpoint of two comparable midterms: this race\'s 2022 votes per mail ballot issued, applied to the ballots issued now, and that figure raised by how much higher countywide turnout was in 2018 than in 2022. See "How many votes are left" below to change it.';
     if (!u) return 'An estimate, not a forecast. The range runs from Oakland\'s 2022 vote rate to that rate raised by how much higher countywide turnout was in 2018 than in 2022. The estimate is the midpoint, and the win number is one vote more than half of it.';
     return `An estimate, not a forecast. The county reports ${fmt(u.processed)} ballots processed and about ${fmt(u.total)} still to process (as of ${u.as_of}), so about ${fmt(u.processed + u.total)} in all. Each area gets its share by returned mail, and each race keeps its 2022 share of ballots cast. The low end sets aside the ${fmt(u.other)} ballots the county lists as damaged or under review; the high end adds another ${fmt(u.mail_after)} late mail ballots, as many as have arrived since Election Day. The win number is one vote more than half the estimate.`;
   };
@@ -853,7 +860,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       const paint = (sc) => {
         output.textContent = sc.pct.toFixed(1) + '%';
         slider.setAttribute('aria-valuetext', sc.pct.toFixed(1) + ' percent');
-        explain.textContent = `${sc.changed ? 'Your scenario' : 'Starting assumption'}: votes in this race equal ${sc.pct.toFixed(1)}% of the ${fmt(sc.issued)} ballots issued, or about ${fmt(sc.expected)} first-choice votes. ${countyReport(rows) ? `The start is ${sc.basePct.toFixed(1)}%, from the county's count of ballots still to process (as of ${countyReport(rows).as_of}), with a range of ${sc.lowPct.toFixed(1)}% to ${sc.highPct.toFixed(1)}%.` : `The start is ${sc.basePct.toFixed(1)}%, midway between the 2022 rate (${sc.lowPct.toFixed(1)}%) and that rate raised for 2018's higher county turnout (${sc.highPct.toFixed(1)}%).`} So far, ${sc.countedPct.toFixed(1)}% is counted and ${sc.returnedPct.toFixed(1)}% of mail ballots were logged as returned, though returned ballots can be blank in this race.`;
+        explain.textContent = `${sc.changed ? 'Your scenario' : 'Starting assumption'}: votes in this race equal ${sc.pct.toFixed(1)}% of the ${fmt(sc.issued)} ballots issued, or about ${fmt(sc.expected)} first-choice votes. ${false ? `The start is ${sc.basePct.toFixed(1)}%, from the county's count of ballots still to process (as of ${countyReport(rows).as_of}), with a range of ${sc.lowPct.toFixed(1)}% to ${sc.highPct.toFixed(1)}%.` : `The start is ${sc.basePct.toFixed(1)}%, midway between the 2022 rate (${sc.lowPct.toFixed(1)}%) and that rate raised for 2018's higher county turnout (${sc.highPct.toFixed(1)}%).`} So far, ${sc.countedPct.toFixed(1)}% is counted and ${sc.returnedPct.toFixed(1)}% of mail ballots were logged as returned, though returned ballots can be blank in this race.`;
         winTile.value.textContent = fmt(sc.winAt);
         winTile.note.textContent = sc.changed ? `Starting estimate: ${fmt(scenario(rows, id, sc.basePct).winAt)}` : 'Half of expected votes, plus one';
         leadTile.value.textContent = fmt(Math.max(0, sc.winAt - sc.lead));
@@ -1216,7 +1223,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       return box;
     };
     n.replaceChildren(
-      tile('Estimated votes left', fmt(m.totalLeft), 'From the county\'s uncounted-ballot report; see "How many votes are left" below'),
+      tile('Estimated votes left', fmt(m.totalLeft), dash.params()['turnout_' + m.id] === null || dash.params()['turnout_' + m.id] === undefined ? 'Midpoint of 2022- and 2018-like turnout; change it in "How many votes are left"' : 'Your turnout setting in "How many votes are left"'),
       tile('Current lead', leadWords(m, m.leadNow), m.id === 'OUSD2' ? 'Two-way count' : 'Final ranked-choice round'),
       tile('If votes split as so far', leadWords(m, m.finishSame), 'Estimated final margin'),
       tile('If late mail keeps shifting', leadWords(m, m.finishShift), `${m.b} near ${m.lateShare.toFixed(1)}%, as in the latest mail batch`),
@@ -1361,56 +1368,61 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
   dash.draw('left-source', (n) => {
     const rows = live();
     const fig = dash.data('byrace');
-    const file = dash.data('cvr');
     if (!rows || fig.status !== 'ok') return dash0(n);
-    const u = rows.find((r) => r.kind === 'unprocessed');
-    const county = rows.find((r) => r.kind === 'returns' && r.key === 'COUNTY');
-    if (!u || !county) return dash0(n);
     const s = one(rows, 'status');
-    const final = u.processed + u.total;
+    const u = rows.find((r) => r.kind === 'unprocessed');
     const ids = ['OUSD2', 'OUSD4', 'OUSD6'];
     const ws = ids.map((id) => one(fig.data, id));
-    const fileTime = 'November 6 at 5:05 PM';
+    const w2 = ws[0];
+    const ratio = w2.turnout_2018 / w2.turnout_2022;
     const steps = el('ol');
-    const li = (...parts) => { const x = el('li'); parts.forEach((t) => x.append(typeof t === 'string' ? document.createTextNode(t) : t)); steps.append(x); };
-    li(el('b', '', 'Whole county: about ' + fmt(final) + ' ballots in all. '),
-      `The county's uncounted-ballot report (as of ${u.as_of}) lists ${fmt(u.processed)} ballots already counted and ${fmt(u.total)} not yet counted: ${fmt(u.mail_by_eday)} mail ballots received by Election Day, ${fmt(u.mail_after)} received after, ${fmt(u.forwarded)} forwarded from other counties, ${fmt(u.cvr)} same-day registrations, ${fmt(u.provisional)} provisional and ${fmt(u.other)} damaged or under review.`);
-    li(el('b', '', 'Each district gets its share. '),
-      `A district's share of those ballots is assumed to match its share of the ${fmt(county.returned)} mail ballots returned countywide, from the county's ballot-returns page. For example, District 2 has ${fmt(ws[0].returned)} returned, ${(ws[0].returned / county.returned * 100).toFixed(2)}% of the county, so about ${fmt(ws[0].est_ballots)} District 2 ballots in all.`);
-    li(el('b', '', 'Ballots become votes. '),
-      `Not every ballot has a vote in the final round of a school board race, because some voters skip it. The county's ballot file (${fileTime}) shows how many do: in District 2, ${fmt(Math.round(ws[0].rate * 1000) / 10)} final-round votes for every 100 ballots.`);
-    li(el('b', '', 'Subtract what has been counted. '),
-      `Expected votes minus the votes in the county's latest results (${s.county_updated.replace(';', ' at')}) gives the votes left. The range runs from leaving out the damaged and under-review ballots to adding as much late mail again.`);
-    const table = el('table');
-    const hr = el('tr');
-    ['District', 'Mail returned', 'Ballots in all (est.)', 'Ballots counted', 'Ballots left (est.)', 'Final-round votes per 100 ballots', 'Votes left (est.)', 'Lead now', 'Trailing candidate needs'].forEach((t) => hr.append(el('th', '', t)));
-    const head = el('thead'); head.append(hr);
-    const body = el('tbody');
+    const li = (head, body) => { const x = el('li'); x.append(el('b', '', head + ' '), body); steps.append(x); };
+    li('Like 2022:', `In 2022, District 2's school board race got ${fmt(w2.votes_2022_race)} votes, ${(w2.rate_2022_votes * 100).toFixed(1)}% of the ${fmt(w2.issued_2022)} mail ballots issued (county 2022 results). This year ${fmt(w2.issued)} are issued, so turnout like 2022 means about ${fmt(w2.expected_low)} votes.`);
+    li('Like 2018:', `Countywide turnout was ${w2.turnout_2018}% in 2018 and ${w2.turnout_2022}% in 2022 (California Secretary of State), so 2018 ran ${ratio.toFixed(2)} times higher. Turnout like 2018 means about ${fmt(w2.expected_high)} votes.`);
+    li('Starting point, the midpoint:', `about ${fmt(w2.expected_mid)} votes in District 2. In Districts 4 and 6 that's scaled to final ranked-choice votes, since some ballots drop out between rounds.`);
+    li('Votes left:', `the expected votes minus the votes already counted in the county's latest results (${s.county_updated.replace(';', ' at')}). Use the controls below to set your own turnout; the map and the what-if follow your setting.`);
+    const grid = el('div', 'oe-src-grid');
+    const short = (name) => { const w = String(name || '').split(' ').slice(-1)[0]; return w.charAt(0) + w.slice(1).toLowerCase(); };
     ids.forEach((id, i) => {
       const w = ws[i];
       const sc = scenario(rows, id);
+      const at = (pct) => scenario(rows, id, pct);
       const lead = sc.lead - sc.trail;
-      const needs = sc.left > 0 ? (sc.left + lead) / 2 / sc.left * 100 : null;
-      const tr = el('tr');
-      const cellTwo = (big, small) => { const td = el('td'); td.append(el('span', 'oe-big', big)); if (small) td.append(el('small', '', small)); return td; };
-      const short = (name) => { const w = String(name || '').split(' ').slice(-1)[0]; return w.charAt(0) + w.slice(1).toLowerCase(); };
-      tr.append(
-        el('td', '', 'District ' + id.slice(-1)),
-        cellTwo(fmt(w.returned), (w.returned / county.returned * 100).toFixed(2) + '% of county'),
-        el('td', '', w.est_ballots === null ? '—' : fmt(w.est_ballots)),
-        cellTwo(w.counted_ballots === null ? '—' : fmt(w.counted_ballots), 'in the ' + fileTime.split(' at')[0] + ' ballot file'),
-        el('td', '', w.est_ballots === null || w.counted_ballots === null ? '—' : fmt(Math.max(0, w.est_ballots - w.counted_ballots))),
-        el('td', '', w.rate === null ? '—' : (w.rate * 100).toFixed(1)),
-        cellTwo(fmt(sc.left), `range ${fmt(w.left_low)} to ${fmt(w.left_high)}`),
-        el('td', '', `${short(w.leader)} by ${fmt(lead)}`),
-        el('td', '', needs === null ? '—' : `${short(w.trailer)}: ${needs.toFixed(1)}%`));
-      body.append(tr);
+      const card = el('div', 'oe-src-card');
+      const big = el('p', 'oe-src-big');
+      const sub = el('p', 'oe-src-sub');
+      const paint = (x) => {
+        big.textContent = `${fmt(x.left)} votes left`;
+        const needs = x.left > 0 ? (x.left + lead) / 2 / x.left * 100 : null;
+        sub.textContent = `${short(w.trailer)} needs ${needs === null ? '—' : needs > 100 ? 'more than all of them' : needs.toFixed(1) + '%'} to win. Expected votes: ${fmt(x.expected)} (${x.pct.toFixed(1)}% of ${fmt(x.issued)} ballots issued).`;
+      };
+      paint(sc);
+      const lo = Math.max(sc.floorPct, Math.floor(sc.lowPct - 3));
+      const hi = Math.ceil(sc.highPct + 3);
+      const label = el('label', 'oe-label', 'Turnout assumption');
+      const slider = el('input');
+      slider.type = 'range'; slider.min = String(lo); slider.max = String(hi); slider.step = '0.1'; slider.value = String(sc.pct);
+      slider.id = 'left-src-' + id; label.htmlFor = slider.id;
+      slider.setAttribute('aria-valuetext', `${fmt(sc.left)} votes left`);
+      slider.addEventListener('input', () => { const x = at(Number(slider.value)); paint(x); slider.setAttribute('aria-valuetext', `${fmt(x.left)} votes left`); });
+      slider.addEventListener('change', () => dash.setParams({ ['turnout_' + id]: Number(slider.value) }));
+      const presets = el('div', 'oe-presets');
+      const options = [['Like 2022', sc.lowPct, false], ['Midpoint', null, true], ['Like 2018', sc.highPct, false]];
+      if (w.report_mid) options.push(['County report', w.report_mid / sc.issued * 100, false]);
+      const chosen = dash.params()['turnout_' + id];
+      options.forEach(([name, pct, isDefault]) => {
+        const b = el('button', '', `${name}: ${fmt(at(pct === null ? sc.basePct : pct).left)}`);
+        b.type = 'button';
+        const on = isDefault ? (chosen === null || chosen === undefined) : (chosen !== null && chosen !== undefined && Math.abs(chosen - pct) < 0.05);
+        b.setAttribute('aria-pressed', String(on));
+        b.addEventListener('click', () => dash.setParams({ ['turnout_' + id]: pct === null ? null : Math.round(pct * 10) / 10 }));
+        presets.append(b);
+      });
+      card.append(el('h3', '', `District ${id.slice(-1)} · ${short(w.leader)} leads by ${fmt(lead)}`), big, sub, label, slider, presets);
+      grid.append(card);
     });
-    table.append(head, body);
-    const scroll = el('div', 'oe-scroll'); scroll.append(table);
-    const custom = ids.some((id) => { const v = dash.params()['turnout_' + id]; return v !== null && v !== undefined; });
-    const note = el('p', 'oe-sub', 'Ballots counted come from the county\'s ballot file, so that column updates when the county posts a new file; everything else updates on its own. ' + (custom ? 'You\'ve changed a race\'s expected turnout above, so its votes left here follow your setting. ' : '') + 'Biggest uncertainty: step 2 assumes each district\'s late, forwarded and same-day ballots are in the same proportion as its returned mail.');
-    n.replaceChildren(steps, scroll, note);
+    const check = u ? el('p', 'oe-sub', `"County report" is a cross-check, not the default: it takes the county's count of ballots received but not yet counted (${fmt(u.total)} countywide, as of ${u.as_of}), gives each district its share by returned mail, and converts ballots to votes at this year's rate from the county's ballot file. The county doesn't report uncounted ballots by district, so that share is an assumption too.`) : el('span');
+    n.replaceChildren(steps, grid, check);
   });
 
   // What-if on the votes left: each area starts at its recent mail split; the viewer can change any of it.
@@ -1459,7 +1471,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     reset.addEventListener('click', () => { whatIf[m.race] = { shift: 0, left: null, set: {} }; redraw(); });
     controls.append(
       stepper('Move every area', words(st.shift), () => { st.shift -= 1; }, () => { st.shift += 1; }, `Points added to ${m.b}'s share in every area you haven't typed over`),
-      stepper('Votes left', fmt(L), () => { st.left = Math.max(500, L - 250); }, () => { st.left = L + 250; }, `Starting estimate: ${fmt(m.totalLeft)}`),
+      stepper('Votes left', fmt(L), () => { st.left = Math.max(500, L - 250); }, () => { st.left = L + 250; }, `Starting estimate: ${fmt(m.totalLeft)}, from "How many votes are left"`),
       reset);
     const final = Math.round(run.final);
     const winner = final > 0 ? m.a : m.b;
