@@ -994,6 +994,8 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         t24: r.t24 === null || r.t24 === '' ? null : Number(r.t24),
         votes_a: r.votes_a === null || r.votes_a === '' ? null : Number(r.votes_a),
         votes_b: r.votes_b === null || r.votes_b === '' ? null : Number(r.votes_b),
+        late_n: r.late_n === null || r.late_n === '' || r.late_n === undefined ? null : Number(r.late_n),
+        late_share_b: r.late_share_b === null || r.late_share_b === '' || r.late_share_b === undefined ? null : Number(r.late_share_b),
         x: Number(r.x), y: Number(r.y), size: Number(r.size) }));
     }
     return mapParsed;
@@ -1109,6 +1111,12 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const totalLeft = d3.sum(areas, (r) => r.left);
     const finishSame = leadNow + d3.sum(areas, (r) => r.gain);
     const finishShift = leadNow + d3.sum(areas, (r) => Math.round(r.left * (100 - 2 * Math.min(100, Math.max(0, r.shareB + shift))) / 100));
+    const recent = known.filter((r) => r.late_share_b !== null);
+    const recentN = d3.sum(recent, (r) => r.late_n);
+    const recentB = recentN ? d3.sum(recent, (r) => r.late_n * r.late_share_b) / recentN : null;
+    const recentShift = recentB === null ? 0 : recentB - d3.sum(recent, (r) => r.votes_b) / d3.sum(recent, (r) => r.total) * 100;
+    const finishRecent = recentN ? leadNow + d3.sum(areas, (r) => Math.round(r.left * (100 - 2 * Math.min(100, Math.max(0, r.late_share_b !== null ? r.late_share_b : r.shareB + recentShift))) / 100)) : null;
+    const recentAreas = recent.length;
     const behind = leadNow >= 0 ? b : a;
     const ahead = leadNow >= 0 ? a : b;
     const shareOf = (r) => (leadNow >= 0 ? r.shareB : r.shareA);
@@ -1128,7 +1136,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       r.soFar = shareOf(r);
       r.needed = clamp(shareOf(r) + lift);
     });
-    return { race, id, a, b, sc, areas, totalLeft, leadNow, finishSame, finishShift, lateShare, behind, ahead, pace, needs, late };
+    return { race, id, a, b, sc, areas, totalLeft, leadNow, finishSame, finishShift, finishRecent, recentAreas, recentN, lateShare, behind, ahead, pace, needs, late };
   };
   const leadWords = (m, value) => (value >= 0 ? `${m.a} by ${fmt(value)}` : `${m.b} by ${fmt(-value)}`);
   const splitWords = (needs) => {
@@ -1166,7 +1174,9 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       tile('Estimated votes left', fmt(m.totalLeft), `At ${m.sc.pct.toFixed(1)}% expected turnout`),
       tile('Current lead', leadWords(m, m.leadNow), m.id === 'OUSD2' ? 'Two-way count' : 'Final ranked-choice round'),
       tile('If votes split as so far', leadWords(m, m.finishSame), 'Estimated final margin'),
-      tile('If late mail keeps shifting', leadWords(m, m.finishShift), `${m.b} near ${m.lateShare.toFixed(1)}%, as in the latest mail batch`));
+      tile('If late mail keeps shifting', leadWords(m, m.finishShift), `${m.b} near ${m.lateShare.toFixed(1)}%, as in the latest mail batch`),
+      ...(m.finishRecent === null ? [] : [tile('If each area keeps its recent split', leadWords(m, m.finishRecent),
+        (Math.abs(m.finishRecent) < 150 ? 'Too close to call. ' : '') + `Each area's votes left split like its mail counted since election night (${fmt(m.recentN)} ballots, ${m.recentAreas} areas with 50 or more)`)]));
   });
   dash.draw('map-path-title', (n) => {
     const m = mapModel();
