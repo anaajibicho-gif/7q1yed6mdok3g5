@@ -152,6 +152,37 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .oe-tip { position: absolute; z-index: 2; max-width: 220px; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); }
 .oe-chart { min-height: 170px; position: relative; }
 .oe-wi { min-width: 0; max-width: 100%; }
+.oe-glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--cds-gap-md); }
+.oe-gl { display: grid; gap: 10px; align-content: start; padding: var(--cds-pad-lg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 12px; min-width: 0; }
+.oe-gl-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.oe-gl-race { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+.oe-chip { font-size: 12px; font-weight: 700; letter-spacing: .03em; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg); }
+.oe-chip[data-tone=close] { background: #fff3d6; border-color: #c98a00; color: #5c3d00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .oe-chip[data-tone=close] { background: #3a2c08; border-color: #e0a82e; color: #f8e3b0; } }
+:root[data-theme="dark"] .oe-chip[data-tone=close] { background: #3a2c08; border-color: #e0a82e; color: #f8e3b0; }
+.oe-gl-big { font-family: var(--font-anthropic-serif); font-size: 26px; line-height: 1.15; }
+.oe-gl-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; position: relative; }
+.oe-gl-bar i { display: block; height: 100%; }
+.oe-gl-bar b { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--color-fg); }
+.oe-gl-names { display: flex; justify-content: space-between; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.oe-gl-facts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--color-border-line); padding-top: 10px; }
+.oe-gl-facts li { display: flex; justify-content: space-between; gap: 10px; font-size: var(--cds-font-size-caption); }
+.oe-gl-facts li span { color: var(--color-fg-muted); }
+.oe-gl-facts li b { font-weight: var(--cds-font-weight-medium); text-align: right; }
+.oe-gl-say { font-size: 14px; line-height: 1.45; }
+.oe-gl button { justify-self: start; font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 12px; border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); cursor: pointer; }
+.oe-more-title { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .08em; color: var(--color-fg-muted); margin-bottom: calc(-1 * var(--cds-gap-lg)) !important; }
+.oe-more { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 12px; min-width: 0; }
+.oe-more > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; }
+.oe-more > summary::-webkit-details-marker { display: none; }
+.oe-more > summary span { display: grid; gap: 2px; }
+.oe-more > summary b { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); }
+.oe-more > summary small { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.oe-more > summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--color-fg-muted); }
+.oe-more[open] > summary::after { content: "−"; }
+.oe-more > summary:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; border-radius: 12px; }
+.oe-more-body { display: grid; gap: var(--cds-gap-md); padding: 0 18px 18px; min-width: 0; }
+.oe-more-body > .oe-card { border: 0; padding: 0; background: transparent; }
 .oe-src { min-width: 0; }
 .oe-src ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; max-width: 80ch; }
 .oe-src li b { font-weight: var(--cds-font-weight-medium); }
@@ -184,28 +215,40 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 <div class="oe">
   <header class="oe-head" id="top">
     <h1>Oakland Election Night</h1>
-    <p data-draw="takeaway" data-source="live">—</p>
-    <p class="oe-sub">November 3, 2026 general election. All counts are unofficial until certified, and the first numbers are mail ballots only, so early leads can shift.</p>
+    <p class="oe-sub">November 3, 2026 general election. Unofficial results from Alameda County, plus our estimates of what's still to be counted.</p>
   </header>
 
   <section class="oe-banner" data-state="slow" aria-live="polite" data-draw="banner" data-source="live">—</section>
 
-  <section class="oe-fresh" id="freshness" aria-label="How current this page is">
-    <div><span class="oe-label">County last posted results</span><b data-draw="county-time" data-source="live">—</b><span class="oe-label" data-draw="county-report" data-source="live">—</span></div>
-    <div><span class="oe-label">Last update sent to this page</span><b data-draw="checked-time" data-source="live">—</b><span class="oe-label">The county is checked every 20 seconds. This time moves when results change, and at a check-in at least every 15 minutes.</span></div>
-    <div><span class="oe-label">We first saw these results</span><b data-draw="results-seen" data-source="live">—</b><span class="oe-label">Time this page's results changed</span></div>
-    <div><span class="oe-label">Ballot returns last changed</span><b data-draw="returns-seen" data-source="live">—</b><span class="oe-label">The county gives no time for these, so this is when we saw it</span></div>
-    <p class="oe-problem" data-draw="problem" data-source="live">—</p>
+  <section class="oe-sec" id="glance">
+    <h2>OUSD school board at a glance</h2>
+    <div class="oe-glance" data-draw="glance" data-source="live byrace cvr">—</div>
+    <p class="oe-sub">"Votes left" is our estimate, not a county count; the next section shows how it's built and lets you change it. "Latest mail" is ballots the county scanned on its most recent counting day.</p>
   </section>
 
-  <section class="oe-sec" id="ousd">
-    <h2>OUSD school board</h2>
-    <p class="oe-sub">Votes shown are first choices. Ranked-choice rounds appear when the county posts them, which it says happens at the end of election night. With three candidates, the real win number can come in lower, because ballots can drop out between rounds.</p>
-    <div class="oe-grid" data-draw="ousd" data-source="live byrace">—</div>
-    <h2 id="ousd-moves">How each OUSD race has moved</h2>
-    <p class="oe-sub">Bars show how each post's new votes split. Lines show each candidate's running share of all votes counted. Districts 4 and 6 show the final ranked-choice round: the last point is the county's count, and dashed lines and hollow points are estimates made by applying that round's vote transfers to earlier posts. Win numbers start from past turnout and aren't county figures. You can change each race's expected turnout below, and the numbers for that race will update. Changes apply only to your view.</p>
-    <div class="oe-moves" data-draw="ousd-moves" data-source="live byrace">—</div>
-    <h2 id="precinct-map">Results and remaining votes by area</h2>
+  <section class="oe-sec" id="votes-left">
+    <h2>How many votes are left</h2>
+    <p class="oe-sub">The county doesn't report uncounted ballots by district or precinct. So every "votes left" number on this page is an estimate: by default, the midpoint between turnout like 2022 and turnout like 2018, the two most recent comparable midterms. Change it for any district below, and the map and the what-if follow.</p>
+    <article class="oe-card oe-src" data-draw="left-source" data-source="live byrace cvr">—</article>
+  </section>
+
+  <section class="oe-sec" id="what-if">
+    <h2>What if: how the votes left split</h2>
+    <p class="oe-sub">Each area starts at the split it gave in the latest mail, counted since election night. Change any area's share, move every area at once, or change how many votes are left, and the result updates. Areas with fewer than 50 recent ballots start from their share so far plus the district's recent shift. Changes stay in your view only.</p>
+    <article class="oe-card oe-wi" id="what-if-card">
+      <div class="oe-presets" role="group" aria-label="Choose a district for the what-if">
+        <button type="button" data-map-race="D2">District 2</button>
+        <button type="button" data-map-race="D4">District 4</button>
+        <button type="button" data-map-race="D6">District 6</button>
+      </div>
+      <div data-draw="what-if" data-source="precmap live byrace cvr">—</div>
+    </article>
+  </section>
+
+  <p class="oe-more-title">More detail</p>
+  <details class="oe-more" id="more-map">
+    <summary><span><b>Map: who leads where, and where the votes are left</b><small>Neighborhood by neighborhood, with paths to a win</small></span></summary>
+    <div class="oe-more-body">
     <p class="oe-sub">Who's ahead in each area so far, how many votes it likely still has to count, and what that could mean for each candidate. Each district's votes left come from "How many votes are left" below and are spread across areas by each area's 2022 turnout, so they're estimates, not county counts.</p>
     <article class="oe-card" id="precinct-map-card">
       <div class="oe-map-controls">
@@ -242,32 +285,39 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       </div>
       <p class="oe-sub">Challengers are green and incumbents are red. Results use fixed point gaps, and in Districts 4 and 6 they're final-round votes. The other two views set their color groups from that district's areas, so compare those colors within a district, not across districts. Expected gain assumes each area's remaining votes split like its votes so far. Late mail may split differently. The needs column adds the same shift to every area, one simple way to reach the winning total. In Districts 4 and 6, shares are final-round votes after ranked-choice transfers. Sources: Alameda County cast vote record, precinct maps and certified 2022 vote statement, and City of Oakland neighborhood map. Unofficial results as of November 6 at 5:05 PM.</p>
     </article>
-    <h2 id="votes-left">How many votes are left, and where that number comes from</h2>
-    <p class="oe-sub">The county doesn't report uncounted ballots by district or precinct. So every "votes left" number on this page is an estimate: by default, the midpoint between turnout like 2022 and turnout like 2018, the two most recent comparable midterms. Change it for any district below, and the map and the what-if follow.</p>
-    <article class="oe-card oe-src" data-draw="left-source" data-source="live byrace cvr">—</article>
-    <h2 id="what-if">What if: how the votes left split</h2>
-    <p class="oe-sub">Each area starts at the split it gave in the latest mail, counted since election night. Change any area's share, move every area at once, or change how many votes are left, and the result updates. Areas with fewer than 50 recent ballots start from their share so far plus the district's recent shift. Changes stay in your view only.</p>
-    <article class="oe-card oe-wi" id="what-if-card">
-      <div class="oe-presets" role="group" aria-label="Choose a district for the what-if">
-        <button type="button" data-map-race="D2">District 2</button>
-        <button type="button" data-map-race="D4">District 4</button>
-        <button type="button" data-map-race="D6">District 6</button>
-      </div>
-      <div data-draw="what-if" data-source="precmap live byrace cvr">—</div>
-    </article>
-    <h2 id="ballot-file">What the county's ballot-level file shows</h2>
+    </div>
+  </details>
+
+  <details class="oe-more" id="more-races">
+    <summary><span><b>Each race in full, with turnout settings</b><small>Vote counts, ranked-choice rounds and how each race moved with each county post</small></span></summary>
+    <div class="oe-more-body">
+    <p class="oe-sub">Votes shown are first choices. Ranked-choice rounds appear when the county posts them, which it says happens at the end of election night. With three candidates, the real win number can come in lower, because ballots can drop out between rounds.</p>
+    <div class="oe-grid" data-draw="ousd" data-source="live byrace">—</div>
+    <h3 id="ousd-moves">How each OUSD race has moved</h3>
+    <p class="oe-sub">Bars show how each post's new votes split. Lines show each candidate's running share of all votes counted. Districts 4 and 6 show the final ranked-choice round: the last point is the county's count, and dashed lines and hollow points are estimates made by applying that round's vote transfers to earlier posts. Win numbers start from past turnout and aren't county figures. You can change each race's expected turnout below, and the numbers for that race will update. Changes apply only to your view.</p>
+    <div class="oe-moves" data-draw="ousd-moves" data-source="live byrace">—</div>
+    </div>
+  </details>
+
+  <details class="oe-more" id="more-ballots">
+    <summary><span><b>How late mail has shifted</b><small>Trends from the county's ballot-level file, by scan date</small></span></summary>
+    <div class="oe-more-body">
     <p class="oe-sub">From the county's cast vote record, exported November 6 at 5:05 PM with Post Election Update #1. It covers only ballots counted by then, and it's refreshed when the county releases a new file. Its final ranked-choice totals match the county's in all three races. This page shows combined totals only, with no ballot-level or precinct-level data. Uncounted mail isn't included, so these patterns are clues rather than results, and scan date isn't the same as the date a voter returned a ballot.</p>
     <div class="oe-moves" data-draw="ballot-file" data-source="cvr live byrace">—</div>
-  </section>
+    </div>
+  </details>
 
-  <section class="oe-card" id="measure-ee">
-    <h2>Measure EE</h2>
+  <details class="oe-more" id="more-ee">
+    <summary><span><b>Measure EE</b><small>Charter changes giving the mayor more authority</small></span></summary>
+    <div class="oe-more-body">
     <p class="oe-sub">City charter changes that would give the mayor more authority. <span data-draw="ee-needs" data-source="live">—</span></p>
     <div data-draw="ee" data-source="live byrace">—</div>
-  </section>
+    </div>
+  </details>
 
-  <section class="oe-sec" id="turnout">
-    <h2>Turnout and ballots</h2>
+  <details class="oe-more" id="more-turnout">
+    <summary><span><b>Turnout and ballots</b><small>Mail ballots returned, past midterms and party breakdown</small></span></summary>
+    <div class="oe-more-body">
     <div class="oe-grid">
       <article class="oe-card" id="returned">
         <h3>Oakland mail ballots: returned vs outstanding</h3>
@@ -300,10 +350,19 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         <div class="oe-chart" data-draw="trend" data-source="live"></div>
       </article>
     </div>
-  </section>
+    </div>
+  </details>
 
-  <section class="oe-card" id="every-race">
-    <h2>Every race</h2>
+  <details class="oe-more" id="more-other">
+    <summary><span><b>Other Oakland races</b><small>Mayor, council, auditor and measures</small></span></summary>
+    <div class="oe-more-body">
+    <div class="oe-grid" data-draw="others" data-source="live byrace">—</div>
+    </div>
+  </details>
+
+  <details class="oe-more" id="more-table">
+    <summary><span><b>Every race in one table</b><small>All the numbers behind the estimates</small></span></summary>
+    <div class="oe-more-body">
     <p class="oe-sub">Ballot figures cover each race's voting area. The county doesn't report ballots cast by race, so votes counted is the sum of votes for all choices. Measure RTM is shown for all of Alameda County, since the county doesn't split it by city.</p>
     <div class="oe-scroll">
       <table data-source="byrace" data-row-key="key">
@@ -311,12 +370,21 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
         <tbody data-draw="races"></tbody>
       </table>
     </div>
-  </section>
+    </div>
+  </details>
 
-  <section class="oe-sec" id="other-races">
-    <h2>Other Oakland races</h2>
-    <div class="oe-grid" data-draw="others" data-source="live byrace">—</div>
-  </section>
+  <details class="oe-more" id="more-times">
+    <summary><span><b>Update times</b><small>When the county posted and when this page last checked</small></span></summary>
+    <div class="oe-more-body">
+    <section class="oe-fresh" id="freshness" aria-label="How current this page is">
+    <div><span class="oe-label">County last posted results</span><b data-draw="county-time" data-source="live">—</b><span class="oe-label" data-draw="county-report" data-source="live">—</span></div>
+    <div><span class="oe-label">Last update sent to this page</span><b data-draw="checked-time" data-source="live">—</b><span class="oe-label">The county is checked every 20 seconds. This time moves when results change, and at a check-in at least every 15 minutes.</span></div>
+    <div><span class="oe-label">We first saw these results</span><b data-draw="results-seen" data-source="live">—</b><span class="oe-label">Time this page's results changed</span></div>
+    <div><span class="oe-label">Ballot returns last changed</span><b data-draw="returns-seen" data-source="live">—</b><span class="oe-label">The county gives no time for these, so this is when we saw it</span></div>
+    <p class="oe-problem" data-draw="problem" data-source="live">—</p>
+    </section>
+    </div>
+  </details>
 
   <p class="oe-note">Sources: Alameda County Registrar of Voters (results, ballot data and Estimated Unprocessed Ballots Report) and the California Secretary of State's Statement of Vote (2018 and 2022 turnout).</p>
 </div>
@@ -1424,6 +1492,77 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
     const check = u ? el('p', 'oe-sub', `"County report" is a cross-check, not the default: it takes the county's count of ballots received but not yet counted (${fmt(u.total)} countywide, as of ${u.as_of}), gives each district its share by returned mail, and converts ballots to votes at this year's rate from the county's ballot file. The county doesn't report uncounted ballots by district, so that share is an assumption too.`) : el('span');
     n.replaceChildren(steps, grid, check);
   });
+
+  dash.draw('glance', (n) => {
+    const rows = live();
+    const fig = dash.data('byrace');
+    if (!rows || fig.status !== 'ok') return dash0(n);
+    const file = dash.data('cvr');
+    const short = (name) => { const w = String(name || '').split(' ').slice(-1)[0]; return w.charAt(0) + w.slice(1).toLowerCase(); };
+    const cards = ['OUSD2', 'OUSD4', 'OUSD6'].map((id) => {
+      const w = one(fig.data, id);
+      const sc = scenario(rows, id);
+      const lead = sc.lead - sc.trail;
+      const leader = short(w.leader);
+      const trailer = short(w.trailer);
+      const needs = sc.left > 0 ? (sc.left + lead) / 2 / sc.left * 100 : null;
+      const scans = file.status === 'ok' ? of(file.data, 'scan').filter((r) => r.race_id === id).sort((x, y) => x.order - y.order) : [];
+      const lastScan = scans.length ? scans[scans.length - 1] : null;
+      const latest = lastScan ? (lastScan.candidate === trailer ? lastScan.share : 100 - lastScan.share) : null;
+      const gap = needs === null || latest === null ? null : needs - latest;
+      let tone = 'lean'; let chip = `Leans ${leader}`;
+      if (needs === null || needs > 100) { tone = 'safe'; chip = `${leader} has it`; }
+      else if (gap !== null && gap <= 3) { tone = 'close'; chip = 'Too close to call'; }
+      else if (gap !== null && gap > 8) { tone = 'safe'; chip = `${leader} very likely`; }
+      const card = el('article', 'oe-gl');
+      const top = el('div', 'oe-gl-top');
+      const chipEl = el('span', 'oe-chip', chip); chipEl.dataset.tone = tone;
+      top.append(el('span', 'oe-gl-race', `District ${id.slice(-1)}`), chipEl);
+      const total = sc.lead + sc.trail;
+      const aPct = sc.lead / total * 100;
+      const bar = el('div', 'oe-gl-bar');
+      const leadColor = isIncumbent(w.leader) ? 'var(--oe-incumbent)' : 'var(--oe-challenger)';
+      const trailColor = isIncumbent(w.trailer) ? 'var(--oe-incumbent)' : 'var(--oe-challenger)';
+      const ia = el('i'); ia.style.width = aPct + '%'; ia.style.background = leadColor;
+      const ib = el('i'); ib.style.flex = '1'; ib.style.background = trailColor;
+      bar.append(ia, ib, el('b')); bar.setAttribute('aria-hidden', 'true');
+      const names = el('div', 'oe-gl-names');
+      names.append(el('span', '', `${leader} ${aPct.toFixed(1)}%`), el('span', '', `${trailer} ${(100 - aPct).toFixed(1)}%`));
+      const facts = el('ul', 'oe-gl-facts');
+      const fact = (k, v) => { const x = el('li'); x.append(el('span', '', k), el('b', '', v)); facts.append(x); };
+      fact('Votes left (estimate)', `about ${fmt(Math.round(sc.left / 10) * 10)}`);
+      fact(`${trailer} needs`, needs === null ? '—' : needs > 100 ? 'out of reach' : `${needs.toFixed(1)}% of them`);
+      if (latest !== null) fact(`${trailer} in latest mail`, `${latest.toFixed(1)}% (${lastScan.period})`);
+      let say;
+      if (needs === null || needs > 100) say = `${leader}'s lead is bigger than the votes estimated to be left.`;
+      else if (tone === 'close') say = `${trailer} has been getting close to what's needed in the latest mail. This one could go either way.`;
+      else if (tone === 'safe') say = `${trailer} would need to do far better than in any recent batch to catch up.`;
+      else say = `${trailer} would need to do noticeably better than in recent batches to catch up.`;
+      const go = el('button', '', 'Try scenarios for this race');
+      go.type = 'button';
+      go.addEventListener('click', () => { dash.setParams({ map_race: 'D' + id.slice(-1) }); const t = document.getElementById('what-if'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      card.append(top, el('p', 'oe-gl-big', `${leader} leads by ${fmt(lead)}`), bar, names, facts, el('p', 'oe-gl-say', say), go);
+      return card;
+    });
+    const ee = one(rows, 'EE');
+    const y = of(rows, 'choice').find((x) => x.key === 'EE|Yes');
+    if (ee && y && ee.votes_total) {
+      const card = el('article', 'oe-gl');
+      const top = el('div', 'oe-gl-top');
+      const chipEl = el('span', 'oe-chip', y.pct > 50 ? 'Passing' : 'Failing'); chipEl.dataset.tone = 'safe';
+      top.append(el('span', 'oe-gl-race', 'Measure EE'), chipEl);
+      const bar = el('div', 'oe-gl-bar');
+      const ia = el('i'); ia.style.width = y.pct + '%'; ia.style.background = 'var(--oe-s5)';
+      const ib = el('i'); ib.style.flex = '1'; ib.style.background = 'var(--oe-n)';
+      bar.append(ia, ib, el('b')); bar.setAttribute('aria-hidden', 'true');
+      const names = el('div', 'oe-gl-names');
+      names.append(el('span', '', `Yes ${y.pct.toFixed(1)}%`), el('span', '', `No ${(100 - y.pct).toFixed(1)}%`));
+      card.append(top, el('p', 'oe-gl-big', `Yes ${y.pct.toFixed(1)}%`), bar, names, el('p', 'oe-gl-say', `${fmt(ee.votes_total)} votes counted. Charter changes giving the mayor more authority; needs a simple majority.`));
+      cards.push(card);
+    }
+    n.replaceChildren(...cards);
+  });
+  document.querySelectorAll('.oe-more').forEach((d) => d.addEventListener('toggle', () => { if (d.open) dash.setParams({ map_hoods: dash.params().map_hoods !== false }); }));
 
   // What-if on the votes left: each area starts at its recent mail split; the viewer can change any of it.
   const whatIf = {};
