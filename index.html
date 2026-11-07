@@ -1410,7 +1410,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
       tile('Final result', `${aPct.toFixed(1)}% – ${(100 - aPct).toFixed(1)}%`, `${m.a} – ${m.b}${m.id === 'OUSD2' ? '' : ', final round'}`),
       tile(`${m.b} on the votes left`, run.bLate.toFixed(1) + '%', needB === null ? '' : `Needs ${needB.toFixed(1)}% to win`),
       tile('Room before it flips', `${Math.abs(flip).toFixed(1)} points`, run.final > 0 ? `More every area would have to move toward ${m.b}` : `More every area would have to move toward ${m.a}`),
-      tile('Each point is worth', fmt(L / 50) + ' votes', `One point of ${m.b}'s share in every area, on the margin`));
+      tile('Each point is worth', fmt(Math.round(L / 50)) + ' votes', `One point of ${m.b}'s share in every area, on the margin`));
     const table = el('table');
     const head = el('thead'); const hr = el('tr');
     ['Area', 'Votes left', `${m.b} so far`, `${m.b} in latest mail`, `${m.b} on votes left`, 'Net votes'].forEach((t) => hr.append(el('th', '', t)));
